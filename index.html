@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Hand Carry Sample Entry</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap');
+
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+--bg:#FAFAF8;--card:#FFFFFF;--border:#E4E2DB;--text:#1A1A18;--muted:#7A786F;
+--accent:#1D4E3E;--accent-light:#E8F0EC;--accent-mid:#2D7A5F;
+--coral:#D85A30;--coral-light:#FAECE7;
+--blue:#378ADD;--blue-light:#E6F1FB;
+--danger:#E24B4A;--danger-light:#FCEBEB;
+--amber:#BA7517;--amber-light:#FAEEDA;
+--radius:10px;--shadow:0 1px 3px rgba(0,0,0,0.06)
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;padding-bottom:120px}
+.top-bar{background:var(--accent);color:#fff;padding:16px 20px;position:sticky;top:0;z-index:100}
+.top-bar h1{font-size:17px;font-weight:600;letter-spacing:-0.3px}
+.top-bar .sub{font-size:12px;opacity:0.7;margin-top:2px}
+.stats-row{display:flex;gap:8px;padding:12px 16px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.stat-pill{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:8px 14px;white-space:nowrap;display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;flex-shrink:0}
+.stat-pill .num{font-family:'JetBrains Mono',monospace;color:var(--accent);font-size:14px}
+.entries-list{padding:0 16px}
+.entry-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;box-shadow:var(--shadow);position:relative;transition:all 0.15s}
+.entry-card .row-num{position:absolute;top:12px;right:12px;font-size:11px;font-weight:600;color:var(--muted);background:var(--bg);border-radius:12px;padding:2px 8px}
+.entry-card .primary{font-weight:600;font-size:15px;margin-bottom:4px}
+.entry-card .secondary{font-size:13px;color:var(--muted);line-height:1.5}
+.entry-card .tag-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.tag{font-size:11px;font-weight:600;padding:3px 8px;border-radius:12px}
+.tag-country{background:var(--blue-light);color:#185FA5}
+.tag-gender{background:var(--accent-light);color:var(--accent)}
+.tag-type{background:var(--coral-light);color:#993C1D}
+.tag-cost{background:var(--amber-light);color:#854F0B;font-family:'JetBrains Mono',monospace}
+.entry-actions{display:flex;gap:8px;margin-top:10px;border-top:1px solid var(--border);padding-top:10px}
+.entry-actions button{flex:1;padding:8px;border:none;border-radius:8px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer}
+.btn-edit{background:var(--accent-light);color:var(--accent)}
+.btn-delete{background:var(--danger-light);color:var(--danger)}
+.empty-state{text-align:center;padding:48px 20px;color:var(--muted)}
+.empty-state .icon{font-size:40px;margin-bottom:12px;opacity:0.4}
+.empty-state p{font-size:14px;line-height:1.6}
+
+/* Floating action buttons */
+.fab-group{position:fixed;bottom:20px;right:16px;left:16px;display:flex;gap:10px;z-index:90}
+.fab{flex:1;padding:14px;border:none;border-radius:var(--radius);font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 16px rgba(0,0,0,0.15);transition:transform 0.1s}
+.fab:active{transform:scale(0.97)}
+.fab-add{background:var(--accent);color:#fff;flex:2}
+.fab-export{background:var(--card);color:var(--accent);border:1.5px solid var(--accent);flex:1}
+
+/* Modal / Form */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:200;display:none;align-items:flex-end;justify-content:center;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.modal-overlay.open{display:flex}
+.modal{background:var(--card);border-radius:16px 16px 0 0;width:100%;max-width:500px;max-height:90dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 0 32px}
+.modal-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:10px auto 0}
+.modal-header{padding:16px 20px 12px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--card);z-index:10}
+.modal-header h2{font-size:17px;font-weight:600}
+.modal-close{background:var(--bg);border:none;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.form-body{padding:0 20px}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
+.field select,.field input,.field textarea{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--radius);font-size:15px;font-family:inherit;background:var(--card);color:var(--text);-webkit-appearance:none;appearance:none;transition:border-color 0.15s}
+.field select{background-image:url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%237A786F' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent)}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field textarea{resize:vertical;min-height:60px}
+.btn-submit{width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;margin-top:8px}
+.btn-submit:active{background:var(--accent-mid)}
+
+/* Import section */
+.import-section{padding:12px 16px}
+.import-btn{width:100%;padding:12px;background:var(--card);border:1.5px dashed var(--border);border-radius:var(--radius);font-size:13px;font-weight:500;color:var(--muted);font-family:inherit;cursor:pointer;transition:all 0.15s}
+.import-btn:hover{border-color:var(--accent);color:var(--accent)}
+.toast{position:fixed;top:80px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:500;z-index:300;opacity:0;transition:opacity 0.3s;pointer-events:none}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <div>
+      <h1>Hand Carry Sample Log</h1>
+      <div class="sub">Customs declaration worksheet</div>
+    </div>
+    <button onclick="toggleSettings()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">⚙</button>
+  </div>
+  <div id="settingsPanel" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.15)">
+    <label style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;opacity:0.7;display:block;margin-bottom:4px">Send-to email address</label>
+    <input id="recipientEmail" type="email" placeholder="customs@yourcompany.com" style="width:100%;padding:10px 12px;border-radius:8px;border:none;font-size:14px;font-family:inherit;background:rgba(255,255,255,0.9);color:#1A1A18" oninput="localStorage.setItem('hc_email',this.value)">
+    <div style="font-size:11px;opacity:0.6;margin-top:4px">Saved on this device — pre-fills the "To" field on export</div>
+  </div>
+</div>
+
+<div class="stats-row" id="statsRow">
+  <div class="stat-pill">Samples <span class="num" id="statLines">0</span></div>
+  <div class="stat-pill">Total qty <span class="num" id="statQty">0</span></div>
+  <div class="stat-pill">Value <span class="num" id="statValue">—</span></div>
+</div>
+
+<div class="import-section">
+  <button class="import-btn" onclick="document.getElementById('fileInput').click()">
+    ↑ Import existing .xlsx to continue editing
+  </button>
+  <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none" onchange="importFile(event)">
+</div>
+
+<div class="entries-list" id="entriesList"></div>
+
+<div class="fab-group">
+  <button class="fab fab-export" onclick="shareFile()" id="btnShare" style="display:none">↑ Share</button>
+  <button class="fab fab-export" onclick="downloadOnly()" id="btnSave">↓ Save</button>
+  <button class="fab fab-add" onclick="openForm()">+ Add sample</button>
+</div>
+
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeForm()">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <h2 id="modalTitle">Add sample</h2>
+      <button class="modal-close" onclick="closeForm()">×</button>
+    </div>
+    <div class="form-body">
+      <div class="field">
+        <label>Country of origin</label>
+        <select id="fCountry">
+          <option value="">Select…</option>
+          <option>Italy</option><option>France</option><option>UK</option><option>China</option>
+          <option>India</option><option>Japan</option><option>South Korea</option><option>Turkey</option>
+          <option>Portugal</option><option>Spain</option><option>USA</option><option>Bangladesh</option>
+          <option>Vietnam</option><option>Other</option>
+        </select>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Quantity</label>
+          <input type="number" id="fQty" min="1" value="1" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label>Garment type</label>
+          <select id="fGarment">
+            <option value="">Select…</option>
+            <option>Pant</option><option>T-Shirt</option><option>Dress</option><option>Skirt</option>
+            <option>Blouse</option><option>Jacket</option><option>Coat</option><option>Sweater</option>
+            <option>Shorts</option><option>Jumpsuit</option><option>Vest</option><option>Cardigan</option>
+            <option>Top</option><option>Shirt</option><option>Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Content / fabric composition</label>
+        <textarea id="fContent" rows="2" placeholder="e.g. 50% Nylon, 25% Cotton, 25% Viscose"></textarea>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Gender / Children</label>
+          <select id="fGender">
+            <option value="">Select…</option>
+            <option>Ladies</option><option>Mens</option><option>Children</option><option>Unisex</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Woven / Knit</label>
+          <select id="fWoven">
+            <option value="">Select…</option>
+            <option>Woven</option><option>Knit</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Unit cost</label>
+          <input type="number" id="fCost" min="0" step="0.01" inputmode="decimal" placeholder="0.00">
+        </div>
+        <div class="field">
+          <label>Currency</label>
+          <select id="fCurrency">
+            <option value="">Select…</option>
+            <option>Euro</option><option>USD</option><option>GBP</option><option>JPY</option>
+            <option>CNY</option><option>KRW</option><option>INR</option><option>Other</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-submit" id="btnSubmit" onclick="saveEntry()">Add sample</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let entries = [];
+let editIndex = -1;
+
+// Load from localStorage
+try { entries = JSON.parse(localStorage.getItem('hc_samples') || '[]'); } catch(e) {}
+
+function persist() {
+  try { localStorage.setItem('hc_samples', JSON.stringify(entries)); } catch(e) {}
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function updateStats() {
+  const lines = entries.length;
+  const qty = entries.reduce((s, e) => s + (parseInt(e.qty) || 0), 0);
+  const byCurr = {};
+  entries.forEach(e => {
+    const c = e.currency || '?';
+    byCurr[c] = (byCurr[c] || 0) + (parseFloat(e.qty) || 0) * (parseFloat(e.cost) || 0);
+  });
+  document.getElementById('statLines').textContent = lines;
+  document.getElementById('statQty').textContent = qty;
+  const valParts = Object.entries(byCurr).map(([c, v]) => {
+    const sym = {Euro:'€',USD:'$',GBP:'£',JPY:'¥',CNY:'¥',KRW:'₩',INR:'₹'}[c] || c+' ';
+    return sym + v.toLocaleString(undefined, {minimumFractionDigits:0, maximumFractionDigits:0});
+  });
+  document.getElementById('statValue').textContent = valParts.length ? valParts.join(' · ') : '—';
+}
+
+function render() {
+  updateStats();
+  const list = document.getElementById('entriesList');
+  if (!entries.length) {
+    list.innerHTML = '<div class="empty-state"><div class="icon">📋</div><p>No samples logged yet.<br>Tap <strong>+ Add sample</strong> to start.</p></div>';
+    return;
+  }
+  list.innerHTML = entries.map((e, i) => {
+    const total = ((parseFloat(e.qty)||0) * (parseFloat(e.cost)||0));
+    const sym = {Euro:'€',USD:'$',GBP:'£',JPY:'¥',CNY:'¥',KRW:'₩',INR:'₹'}[e.currency] || '';
+    return `<div class="entry-card">
+      <span class="row-num">#${i+1}</span>
+      <div class="primary">${e.garment || 'Unknown'} × ${e.qty || 1}</div>
+      <div class="secondary">${e.content || '—'}</div>
+      <div class="tag-row">
+        ${e.country ? `<span class="tag tag-country">${e.country}</span>` : ''}
+        ${e.gender ? `<span class="tag tag-gender">${e.gender}</span>` : ''}
+        ${e.woven ? `<span class="tag tag-type">${e.woven}</span>` : ''}
+        <span class="tag tag-cost">${sym}${total.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
+      </div>
+      <div class="entry-actions">
+        <button class="btn-edit" onclick="editEntry(${i})">Edit</button>
+        <button class="btn-delete" onclick="deleteEntry(${i})">Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openForm(idx) {
+  editIndex = typeof idx === 'number' ? idx : -1;
+  document.getElementById('modalTitle').textContent = editIndex >= 0 ? 'Edit sample' : 'Add sample';
+  document.getElementById('btnSubmit').textContent = editIndex >= 0 ? 'Save changes' : 'Add sample';
+  if (editIndex >= 0) {
+    const e = entries[editIndex];
+    document.getElementById('fCountry').value = e.country || '';
+    document.getElementById('fQty').value = e.qty || 1;
+    document.getElementById('fGarment').value = e.garment || '';
+    document.getElementById('fContent').value = e.content || '';
+    document.getElementById('fGender').value = e.gender || '';
+    document.getElementById('fWoven').value = e.woven || '';
+    document.getElementById('fCost').value = e.cost || '';
+    document.getElementById('fCurrency').value = e.currency || '';
+  } else {
+    ['fCountry','fGarment','fContent','fGender','fWoven','fCost','fCurrency'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('fQty').value = 1;
+    // Remember last used country & currency
+    if (entries.length) {
+      const last = entries[entries.length - 1];
+      document.getElementById('fCountry').value = last.country || '';
+      document.getElementById('fCurrency').value = last.currency || '';
+    }
+  }
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeForm() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  editIndex = -1;
+}
+
+function saveEntry() {
+  const entry = {
+    country: document.getElementById('fCountry').value,
+    qty: document.getElementById('fQty').value,
+    garment: document.getElementById('fGarment').value,
+    content: document.getElementById('fContent').value,
+    gender: document.getElementById('fGender').value,
+    woven: document.getElementById('fWoven').value,
+    cost: document.getElementById('fCost').value,
+    currency: document.getElementById('fCurrency').value
+  };
+  if (!entry.garment) { toast('Please select a garment type'); return; }
+  if (editIndex >= 0) {
+    entries[editIndex] = entry;
+    toast('Sample updated');
+  } else {
+    entries.push(entry);
+    toast('Sample added');
+  }
+  persist();
+  closeForm();
+  render();
+}
+
+function editEntry(i) { openForm(i); }
+
+function deleteEntry(i) {
+  if (confirm('Delete this sample?')) {
+    entries.splice(i, 1);
+    persist();
+    render();
+    toast('Sample deleted');
+  }
+}
+
+function buildFile() {
+  const wb = XLSX.utils.book_new();
+  const header = ['Country of Origin','Qty.','Garment Type','Content','','Gender / Children','Woven/ Knit','Unit Cost','Total','Currency'];
+  const data = [['Sample Purchase Breakdown'],[], header];
+  let grandTotal = 0;
+  entries.forEach(e => {
+    const qty = parseFloat(e.qty) || 0;
+    const cost = parseFloat(e.cost) || 0;
+    grandTotal += qty * cost;
+    data.push([e.country, qty, e.garment, e.content, '', e.gender, e.woven, cost, qty * cost, e.currency]);
+  });
+  data.push([]);
+  data.push(['','','','','','','','GRAND TOTAL:', grandTotal, '']);
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [{wch:16},{wch:8},{wch:16},{wch:40},{wch:2},{wch:18},{wch:12},{wch:12},{wch:14},{wch:10}];
+  ws['!merges'] = [{s:{r:0,c:0},e:{r:0,c:9}}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Shipment Details');
+  const now = new Date();
+  const dateStr = now.toISOString().slice(0,10);
+  const filename = `Hand_Carry_Samples_${dateStr}.xlsx`;
+  const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+  const blob = new Blob([wbout], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const file = new File([blob], filename, {type:blob.type});
+  return {file, filename, blob, grandTotal, dateStr};
+}
+
+async function shareFile() {
+  if (!entries.length) { toast('No samples to share'); return; }
+  const {file, filename, grandTotal, dateStr} = buildFile();
+  const totalQty = entries.reduce((s,e) => s + (parseInt(e.qty)||0), 0);
+  const summary = `Hand Carry Samples – ${dateStr}\n${entries.length} items, ${totalQty} pcs, total value: ${grandTotal.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+
+  if (navigator.canShare && navigator.canShare({files:[file]})) {
+    try {
+      await navigator.share({
+        title: `Hand Carry Samples – ${dateStr}`,
+        text: summary,
+        files: [file]
+      });
+      toast('Shared successfully');
+    } catch(err) {
+      if (err.name !== 'AbortError') {
+        downloadFallback(file, filename);
+      }
+    }
+  } else {
+    downloadFallback(file, filename);
+  }
+}
+
+function downloadOnly() {
+  if (!entries.length) { toast('No samples to save'); return; }
+  const {file, filename} = buildFile();
+  downloadFallback(file, filename);
+}
+
+function downloadFallback(file, filename) {
+  const url = URL.createObjectURL(file);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('File saved to downloads');
+}
+
+function toggleSettings() {
+  const p = document.getElementById('settingsPanel');
+  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
+
+// Restore saved email
+try {
+  const savedEmail = localStorage.getItem('hc_email') || '';
+  document.getElementById('recipientEmail').value = savedEmail;
+} catch(e) {}
+
+function importFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const wb = XLSX.read(e.target.result, {type:'array'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const data = XLSX.utils.sheet_to_json(ws, {header:1});
+      let headerRow = -1;
+      data.forEach((row, i) => {
+        if (row && row[0] && String(row[0]).toLowerCase().includes('country')) headerRow = i;
+      });
+      if (headerRow < 0) { toast('Could not find header row'); return; }
+      let imported = 0;
+      for (let i = headerRow + 1; i < data.length; i++) {
+        const r = data[i];
+        if (!r || (!r[0] && !r[2])) continue;
+        entries.push({
+          country: r[0] || '', qty: r[1] || 1, garment: r[2] || '',
+          content: r[3] || '', gender: r[5] || '', woven: r[6] || '',
+          cost: r[7] || '', currency: r[9] || ''
+        });
+        imported++;
+      }
+      persist();
+      render();
+      toast(`Imported ${imported} samples`);
+    } catch(err) { toast('Error reading file'); }
+  };
+  reader.readAsArrayBuffer(file);
+  event.target.value = '';
+}
+
+// Show Share button only on mobile/tablet (phone or iPad)
+(function() {
+  const ua = navigator.userAgent || '';
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const hasShareAPI = navigator.canShare && navigator.share;
+  if (isMobile && hasShareAPI) {
+    document.getElementById('btnShare').style.display = '';
+    document.getElementById('btnSave').style.flex = '0.8';
+  }
+})();
+
+render();
+</script>
+</body>
+</html>
