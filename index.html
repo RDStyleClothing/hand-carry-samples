@@ -1,10 +1,11 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Hand Carry Sample Entry</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap');
 
@@ -324,41 +325,92 @@ function deleteEntry(i) {
 }
 
 function buildFile() {
+  const currSymbol = {Euro:'\u20AC',USD:'$',GBP:'\u00A3',JPY:'\u00A5',CNY:'\u00A5',KRW:'\u20A9',INR:'\u20B9'};
+  const currFmt = function(c) {
+    var s = currSymbol[c] || '';
+    return s ? '"' + s + '"#,##0.00' : '#,##0.00';
+  };
   const wb = XLSX.utils.book_new();
   const header = ['Country of Origin','Qty.','Garment Type','Content','','Gender / Children','Woven/ Knit','Unit Cost','Total','Currency'];
   const data = [['Sample Purchase Breakdown'],[], header];
-  let grandTotal = 0;
-  entries.forEach(e => {
-    const qty = parseFloat(e.qty) || 0;
-    const cost = parseFloat(e.cost) || 0;
-    grandTotal += qty * cost;
+  const totals = {};
+  entries.forEach(function(e) {
+    var qty = parseFloat(e.qty) || 0;
+    var cost = parseFloat(e.cost) || 0;
+    var curr = e.currency || 'Other';
+    if (!totals[curr]) totals[curr] = 0;
+    totals[curr] += qty * cost;
     data.push([e.country, qty, e.garment, e.content, '', e.gender, e.woven, cost, qty * cost, e.currency]);
   });
   data.push([]);
-  data.push(['','','','','','','','GRAND TOTAL:', grandTotal, '']);
+  var currencies = Object.keys(totals);
+  currencies.forEach(function(curr) {
+    data.push(['','','','','','','', curr + ' TOTAL:', totals[curr], curr]);
+  });
   const ws = XLSX.utils.aoa_to_sheet(data);
-  ws['!cols'] = [{wch:16},{wch:8},{wch:16},{wch:40},{wch:2},{wch:18},{wch:12},{wch:12},{wch:14},{wch:10}];
+  ws['!cols'] = [{wch:18},{wch:8},{wch:16},{wch:40},{wch:2},{wch:18},{wch:12},{wch:14},{wch:14},{wch:10}];
   ws['!merges'] = [{s:{r:0,c:0},e:{r:0,c:9}}];
+  var titleStyle = {font:{bold:true,sz:14,name:'Arial'},alignment:{horizontal:'center',vertical:'center'}};
+  if (ws['A1']) ws['A1'].s = titleStyle;
+  var headerStyle = {font:{bold:true,sz:10,name:'Arial',underline:true},alignment:{horizontal:'center',vertical:'center',wrapText:true},fill:{fgColor:{rgb:'D9D9D9'}},border:{top:{style:'thin',color:{rgb:'AAAAAA'}},bottom:{style:'thin',color:{rgb:'AAAAAA'}},left:{style:'thin',color:{rgb:'AAAAAA'}},right:{style:'thin',color:{rgb:'AAAAAA'}}}};
+  var hCols = ['A','B','C','D','E','F','G','H','I','J'];
+  hCols.forEach(function(col) {
+    var ref = col + '3';
+    if (!ws[ref]) ws[ref] = {v:'',t:'s'};
+    ws[ref].s = headerStyle;
+  });
+  var thinB = {top:{style:'thin',color:{rgb:'CCCCCC'}},bottom:{style:'thin',color:{rgb:'CCCCCC'}},left:{style:'thin',color:{rgb:'CCCCCC'}},right:{style:'thin',color:{rgb:'CCCCCC'}}};
+  var baseDS = {font:{sz:10,name:'Arial'},alignment:{horizontal:'center',vertical:'center',wrapText:true},border:thinB};
+  for (var i = 0; i < entries.length; i++) {
+    var r = i + 4;
+    var curr = entries[i].currency || 'Other';
+    var fmt = currFmt(curr);
+    hCols.forEach(function(col) {
+      var ref = col + r;
+      if (!ws[ref]) return;
+      if (col === 'H' || col === 'I') {
+        ws[ref].s = {font:{sz:10,name:'Arial'},alignment:{horizontal:'center',vertical:'center',wrapText:true},border:thinB,numFmt:fmt};
+      } else {
+        ws[ref].s = baseDS;
+      }
+    });
+  }
+  var medB = {top:{style:'medium',color:{rgb:'999999'}},bottom:{style:'medium',color:{rgb:'999999'}},left:{style:'medium',color:{rgb:'999999'}},right:{style:'medium',color:{rgb:'999999'}}};
+  currencies.forEach(function(curr, idx) {
+    var r = entries.length + 5 + idx;
+    var fmt = currFmt(curr);
+    var gtLabel = {font:{bold:true,sz:11,name:'Arial'},alignment:{horizontal:'right',vertical:'center'},fill:{fgColor:{rgb:'D9D9D9'}},border:medB};
+    var gtValue = {font:{bold:true,sz:11,name:'Arial'},alignment:{horizontal:'center',vertical:'center'},fill:{fgColor:{rgb:'D9D9D9'}},border:medB,numFmt:fmt};
+    var gtCurr = {font:{bold:true,sz:10,name:'Arial'},alignment:{horizontal:'center',vertical:'center'},fill:{fgColor:{rgb:'D9D9D9'}},border:medB};
+    if (ws['H'+r]) ws['H'+r].s = gtLabel;
+    if (ws['I'+r]) ws['I'+r].s = gtValue;
+    if (ws['J'+r]) ws['J'+r].s = gtCurr;
+  });
   XLSX.utils.book_append_sheet(wb, ws, 'Shipment Details');
-  const now = new Date();
-  const dateStr = now.toISOString().slice(0,10);
-  const filename = `Hand_Carry_Samples_${dateStr}.xlsx`;
-  const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
-  const blob = new Blob([wbout], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-  const file = new File([blob], filename, {type:blob.type});
-  return {file, filename, blob, grandTotal, dateStr};
+  var now = new Date();
+  var dateStr = now.toISOString().slice(0,10);
+  var filename = 'Hand_Carry_Samples_' + dateStr + '.xlsx';
+  var wbout = XLSX.write(wb, {bookType:'xlsx',type:'array'});
+  var blob = new Blob([wbout], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  var file = new File([blob], filename, {type:blob.type});
+  return {file:file, filename:filename, blob:blob, totals:totals, dateStr:dateStr};
 }
 
 async function shareFile() {
   if (!entries.length) { toast('No samples to share'); return; }
-  const {file, filename, grandTotal, dateStr} = buildFile();
+  const {file, filename, totals, dateStr} = buildFile();
+  const currSymbol = {Euro:'\u20AC',USD:'$',GBP:'\u00A3',JPY:'\u00A5',CNY:'\u00A5',KRW:'\u20A9',INR:'\u20B9'};
   const totalQty = entries.reduce((s,e) => s + (parseInt(e.qty)||0), 0);
-  const summary = `Hand Carry Samples – ${dateStr}\n${entries.length} items, ${totalQty} pcs, total value: ${grandTotal.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+  const valParts = Object.entries(totals).map(function(pair) {
+    var sym = currSymbol[pair[0]] || pair[0] + ' ';
+    return sym + pair[1].toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+  });
+  const summary = 'Hand Carry Samples \u2013 ' + dateStr + '\n' + entries.length + ' items, ' + totalQty + ' pcs\n' + valParts.join(' | ');
 
   if (navigator.canShare && navigator.canShare({files:[file]})) {
     try {
       await navigator.share({
-        title: `Hand Carry Samples – ${dateStr}`,
+        title: 'Hand Carry Samples \u2013 ' + dateStr,
         text: summary,
         files: [file]
       });
