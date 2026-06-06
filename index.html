@@ -107,19 +107,29 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .api-key-status.saved{color:var(--accent)}
 .manual-photo-section{margin-bottom:16px}
 .manual-photo-section .section-label{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px}
+.api-pill{display:inline-flex;align-items:center;gap:5px;border:none;border-radius:14px;padding:5px 10px;font-size:11px;font-weight:600;font-family:inherit;cursor:pointer;color:#fff;transition:background 0.2s}
+.api-pill .dot{width:7px;height:7px;border-radius:50%;background:#fff;flex-shrink:0}
+.api-pill.connected{background:rgba(45,122,95,0.95)}
+.api-pill.disconnected{background:rgba(226,75,74,0.95)}
+.api-pill.checking{background:rgba(255,255,255,0.2)}
+.api-pill.checking .dot{animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
 </style>
 </head>
 <body>
 <div class="top-bar">
   <div style="display:flex;justify-content:space-between;align-items:center">
     <div><h1>RD Style Sample Log</h1><div class="sub">Customs declaration worksheet</div></div>
-    <button onclick="toggleSettings()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">&#9881;</button>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button id="apiPill" class="api-pill disconnected" onclick="onApiPillTap()"><span class="dot"></span><span id="apiPillLabel">No key</span></button>
+      <button onclick="toggleSettings()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">&#9881;</button>
+    </div>
   </div>
   <div id="settingsPanel" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.15)">
     <label style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;opacity:0.7;display:block;margin-bottom:4px">Send-to email address</label>
     <input id="recipientEmail" type="email" placeholder="customs@yourcompany.com" style="width:100%;padding:10px 12px;border-radius:8px;border:none;font-size:14px;font-family:inherit;background:rgba(255,255,255,0.9);color:#1A1A18;margin-bottom:8px" oninput="localStorage.setItem('hc_email',this.value)">
     <label style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;opacity:0.7;display:block;margin-bottom:4px">Anthropic API key (for photo scan)</label>
-    <input id="settingsApiKey" type="password" placeholder="sk-ant-api03-..." style="width:100%;padding:10px 12px;border-radius:8px;border:none;font-size:13px;font-family:'JetBrains Mono',monospace;background:rgba(255,255,255,0.9);color:#1A1A18" oninput="localStorage.setItem('scan_api_key',this.value)">
+    <input id="settingsApiKey" type="password" placeholder="sk-ant-api03-..." style="width:100%;padding:10px 12px;border-radius:8px;border:none;font-size:13px;font-family:'JetBrains Mono',monospace;background:rgba(255,255,255,0.9);color:#1A1A18" oninput="localStorage.setItem('scan_api_key',this.value)" onchange="onKeyFieldCommit(this.value)">
     <div style="font-size:11px;opacity:0.6;margin-top:4px">Both saved on this device only</div>
     <button onclick="if(confirm('Clear all samples, photos, and start fresh?')){clearAllData();toggleSettings();}" style="width:100%;margin-top:12px;padding:10px;border-radius:8px;border:none;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;background:rgba(226,75,74,0.15);color:#E24B4A">Clear all samples</button>
   </div>
@@ -250,7 +260,7 @@ function deleteEntry(i){if(confirm('Delete this sample?')){if(entries[i].imageId
 
 /* ===== SCANNER ===== */
 function openScanner(){scanPhotos={price:null,content:null,garment:null,origin:null};['price','content','garment','origin'].forEach(function(t){resetSlot(t);});['sfStyle','sfCountry','sfGarment','sfContent','sfGender','sfWoven','sfCost','sfCurrency'].forEach(function(id){document.getElementById(id).value='';});document.getElementById('sfQty').value=1;document.getElementById('scanError').classList.remove('show');document.getElementById('scanBtn').disabled=true;document.getElementById('scanBtn').textContent='Scan & auto-fill';var k=localStorage.getItem('scan_api_key')||'';document.getElementById('scanApiKey').value=k;document.getElementById('scanKeyStatus').textContent=k?'Key saved':'API key needed';document.getElementById('scanKeyStatus').className=k?'api-key-status saved':'api-key-status';document.getElementById('scanOverlay').classList.add('open');}
-function saveScanKey(){var k=document.getElementById('scanApiKey').value.trim();if(!k){toast('Please enter an API key');return;}localStorage.setItem('scan_api_key',k);document.getElementById('scanKeyStatus').textContent='Key saved';document.getElementById('scanKeyStatus').className='api-key-status saved';toast('API key saved');checkScanReady();}
+function saveScanKey(){var k=document.getElementById('scanApiKey').value.trim();if(!k){toast('Please enter an API key');return;}localStorage.setItem('scan_api_key',k);document.getElementById('scanKeyStatus').textContent='Key saved';document.getElementById('scanKeyStatus').className='api-key-status saved';checkScanReady();validateApiKey(k,true);}
 function triggerPhoto(type){openPhotoPicker('scan',type);}
 function clearSlot(type){scanPhotos[type]=null;resetSlot(type);checkScanReady();}
 function resetSlot(type){var icons={price:'\uD83C\uDFF7',content:'\uD83E\uDDF5',garment:'\uD83D\uDC54',origin:'\uD83C\uDF0F'};var labels={price:'Price tag',content:'Content label',garment:'Garment',origin:'Origin'};var slot=document.getElementById('slot-'+type);slot.classList.remove('has-img');slot.innerHTML='<div class="ps-icon">'+icons[type]+'</div><div class="ps-label">'+labels[type]+'</div>';}
@@ -309,6 +319,11 @@ function clearAllData(){entries=[];imageStore={};persist();dbClear();render();to
 
 function downloadFallback(file,filename){var url=URL.createObjectURL(file);var a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);toast('File saved');}
 function toggleSettings(){var p=document.getElementById('settingsPanel');p.style.display=p.style.display==='none'?'block':'none';}
+/* ===== API KEY VALIDATION + STATUS PILL ===== */
+function setApiPill(state,label){var p=document.getElementById('apiPill');var l=document.getElementById('apiPillLabel');if(!p)return;p.className='api-pill '+state;l.textContent=label;}
+async function validateApiKey(key,announce){key=(key||'').trim();if(!key){setApiPill('disconnected','No key');return false;}setApiPill('checking','Checking');try{var resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1,messages:[{role:'user',content:'hi'}]})});if(resp.ok){setApiPill('connected','Connected');if(announce)toast('API key verified \u2713');return true;}var msg='Invalid key';if(resp.status===401||resp.status===403)msg='Invalid key';else if(resp.status===429)msg='Rate limited';else msg='Check failed';setApiPill('disconnected',msg);if(announce)toast('API key '+msg.toLowerCase());return false;}catch(err){setApiPill('disconnected','Offline');if(announce)toast('Could not reach API (offline?)');return false;}}
+function onKeyFieldCommit(val){val=(val||'').trim();localStorage.setItem('scan_api_key',val);validateApiKey(val,true);}
+function onApiPillTap(){var p=document.getElementById('settingsPanel');if(p.style.display==='none'||!p.style.display)p.style.display='block';var f=document.getElementById('settingsApiKey');if(f)f.focus();}
 try{document.getElementById('recipientEmail').value=localStorage.getItem('hc_email')||'';document.getElementById('settingsApiKey').value=localStorage.getItem('scan_api_key')||'';}catch(e){}
 function importFile(event){var file=event.target.files[0];if(!file)return;var reader=new FileReader();reader.onload=function(e){try{var wb=XLSX.read(e.target.result,{type:'array'});var ws=wb.Sheets[wb.SheetNames[0]];var data=XLSX.utils.sheet_to_json(ws,{header:1});var hr=-1;data.forEach(function(row,i){if(row&&row[0]&&String(row[0]).toLowerCase().includes('country'))hr=i;});if(hr<0){toast('Could not find header row');return;}var imported=0;for(var i=hr+1;i<data.length;i++){var r=data[i];if(!r||(!r[0]&&!r[2]))continue;entries.push({country:r[0]||'',qty:r[1]||1,garment:r[2]||'',content:r[3]||'',gender:r[5]||'',woven:r[6]||'',cost:r[7]||'',currency:r[9]||''});imported++;}persist();render();toast('Imported '+imported+' samples');}catch(err){toast('Error reading file');}};reader.readAsArrayBuffer(file);event.target.value='';}
 (function(){var ua=navigator.userAgent||'';var m=/iPhone|iPad|iPod|Android/i.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);if(m&&navigator.canShare&&navigator.share){document.getElementById('btnShare').style.display='';document.getElementById('btnSave').style.flex='0.8';}})();
@@ -317,9 +332,10 @@ function importFile(event){var file=event.target.files[0];if(!file)return;var re
   try{await openDB();imageStore=await dbGetAll();}catch(e){}
   try{var old=JSON.parse(localStorage.getItem('hc_images')||'{}');var keys=Object.keys(old);if(keys.length){for(var i=0;i<keys.length;i++){if(!imageStore[keys[i]]){imageStore[keys[i]]=old[keys[i]];await dbPut(keys[i],old[keys[i]]);}}localStorage.removeItem('hc_images');}}catch(e){}
   render();
+  validateApiKey(localStorage.getItem('scan_api_key')||'',false);
 })();
 </script>
-<div style="position:fixed;bottom:6px;right:12px;display:flex;align-items:center;gap:8px;z-index:1"><a href="#" onclick="event.preventDefault();document.getElementById('docsPopup').classList.add('open')" style="font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--muted);opacity:0.5;text-decoration:none">Documentation</a><span style="font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--muted);opacity:0.5">v14</span></div>
+<div style="position:fixed;bottom:6px;right:12px;display:flex;align-items:center;gap:8px;z-index:1"><a href="#" onclick="event.preventDefault();document.getElementById('docsPopup').classList.add('open')" style="font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--muted);opacity:0.5;text-decoration:none">Documentation</a><span style="font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--muted);opacity:0.5">v15</span></div>
 <div id="docsPopup" class="modal-overlay" onclick="if(event.target===this)this.classList.remove('open')" style="align-items:center;justify-content:center">
   <div style="background:var(--card);border-radius:12px;width:calc(100% - 32px);max-width:500px;height:85dvh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.2)">
     <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border);flex-shrink:0">
