@@ -3,201 +3,205 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RD Style Sample Log — Documentation</title>
+<title>Help — RD Style Sample Log</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap');
-*{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#FAFAF8;--card:#FFFFFF;--border:#E4E2DB;--text:#1A1A18;--muted:#7A786F;--accent:#1D4E3E;--accent-light:#E8F0EC;--blue:#378ADD;--blue-light:#E6F1FB;--amber:#BA7517;--amber-light:#FAEEDA;--radius:10px;--shadow:0 1px 3px rgba(0,0,0,0.06)}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);line-height:1.7}
-.top-bar{background:var(--accent);color:#fff;padding:16px 20px;position:sticky;top:0;z-index:100;display:flex;justify-content:space-between;align-items:center}
-.top-bar h1{font-size:17px;font-weight:600;letter-spacing:-0.3px}
-.back-btn{background:rgba(255,255,255,0.15);border:none;color:#fff;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
-.back-btn:hover{background:rgba(255,255,255,0.25)}
-.container{max-width:600px;margin:0 auto;padding:20px 20px 80px}
-h2{font-size:18px;font-weight:700;margin:32px 0 12px;color:var(--accent)}
-h2:first-of-type{margin-top:16px}
-h3{font-size:15px;font-weight:600;margin:20px 0 8px;color:var(--text)}
-p{margin:0 0 12px;font-size:15px;color:var(--text)}
-.step-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin:12px 0;box-shadow:var(--shadow)}
-.step-num{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;background:var(--accent);color:#fff;border-radius:50%;font-size:13px;font-weight:700;margin-right:10px;flex-shrink:0}
-.step-header{display:flex;align-items:center;margin-bottom:8px}
-.step-title{font-size:15px;font-weight:600}
-.step-body{font-size:14px;color:var(--muted);padding-left:38px;line-height:1.6}
-.tip-box{background:var(--accent-light);border-radius:var(--radius);padding:12px 14px;font-size:13px;color:var(--accent);line-height:1.6;margin:12px 0}
-.tip-box strong{font-weight:600}
-.warn-box{background:var(--amber-light);border-radius:var(--radius);padding:12px 14px;font-size:13px;color:var(--amber);line-height:1.6;margin:12px 0}
-.info-box{background:var(--blue-light);border-radius:var(--radius);padding:12px 14px;font-size:13px;color:#185FA5;line-height:1.6;margin:12px 0}
-.section-divider{height:1px;background:var(--border);margin:32px 0}
-.tag{display:inline-block;font-size:11px;font-weight:600;padding:3px 8px;border-radius:12px;margin:0 2px}
-.tag-green{background:#E1F5EE;color:#0F6E56}
-.tag-purple{background:#EEEDFE;color:#534AB7}
-.tag-blue{background:var(--blue-light);color:#185FA5}
-.kbd{display:inline-block;background:var(--card);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text)}
+  :root{
+    --bg:#FAFAF8;--card:#FFFFFF;--border:#E4E2DB;--text:#1A1A18;--muted:#7A786F;
+    --accent:#1D4E3E;--accent-light:#E8F0EC;--accent-mid:#2D7A5F;
+    --coral:#D85A30;--coral-light:#FAECE7;--blue:#378ADD;--blue-light:#E6F1FB;
+    --danger:#E24B4A;--danger-light:#FCEBEB;--amber:#BA7517;--amber-light:#FAEEDA;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
+       line-height:1.55;padding:22px 18px 40px;font-size:15px;-webkit-font-smoothing:antialiased}
+  .lead{color:var(--muted);font-size:14px;margin-bottom:22px}
+  .lead strong{color:var(--text);font-weight:600}
+
+  section{margin-bottom:22px;opacity:0;transform:translateY(8px);
+          animation:rise .5s ease forwards}
+  section:nth-of-type(1){animation-delay:.04s}
+  section:nth-of-type(2){animation-delay:.10s}
+  section:nth-of-type(3){animation-delay:.16s}
+  section:nth-of-type(4){animation-delay:.22s}
+  section:nth-of-type(5){animation-delay:.28s}
+  section:nth-of-type(6){animation-delay:.34s}
+  @keyframes rise{to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){section{animation:none;opacity:1;transform:none}}
+
+  .step-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .num{flex-shrink:0;width:26px;height:26px;border-radius:50%;background:var(--accent);
+       color:#fff;font-family:'JetBrains Mono',monospace;font-weight:600;font-size:13px;
+       display:flex;align-items:center;justify-content:center}
+  h2{font-size:17px;font-weight:700;letter-spacing:-0.2px}
+  .first .num{background:var(--coral)}
+  .badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:10px;
+         font-weight:600;text-transform:uppercase;letter-spacing:0.6px;color:var(--coral);
+         background:var(--coral-light);padding:2px 8px;border-radius:10px;margin-left:2px}
+
+  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;
+        padding:14px 16px;box-shadow:0 1px 3px rgba(0,0,0,0.05)}
+  .card.tinted{background:var(--accent-light);border-color:#D5E4DC}
+
+  ol,ul{margin:4px 0 0;padding-left:20px}
+  li{margin-bottom:7px}
+  li:last-child{margin-bottom:0}
+  b,strong{font-weight:600}
+  .mono{font-family:'JetBrains Mono',monospace;font-size:0.88em;background:var(--bg);
+        border:1px solid var(--border);border-radius:5px;padding:1px 5px}
+
+  .sub{font-weight:700;font-size:14px;margin:14px 0 4px;color:var(--accent)}
+  .sub:first-child{margin-top:0}
+
+  .pills{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0 4px}
+  .pill{display:inline-flex;align-items:center;gap:6px;border-radius:14px;padding:4px 10px;
+        font-size:12px;font-weight:600;color:#fff}
+  .pill .dot{width:7px;height:7px;border-radius:50%;background:#fff}
+  .pill.ok{background:var(--accent-mid)}
+  .pill.bad{background:var(--danger)}
+
+  .legend{margin-top:10px;font-size:13.5px}
+  .legend div{margin-bottom:6px}
+  .legend .tag{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;
+               padding:1px 7px;border-radius:8px}
+  .tag.ok{background:var(--accent-light);color:var(--accent)}
+  .tag.bad{background:var(--danger-light);color:var(--danger)}
+
+  .note{display:flex;gap:9px;background:var(--amber-light);border-radius:10px;
+        padding:11px 13px;font-size:13.5px;margin-top:12px;color:#5c4410}
+  .note .ico{flex-shrink:0;font-size:15px;line-height:1.3}
+  .tip{background:var(--blue-light);color:#1d4a73}
+
+  hr{border:none;border-top:1px solid var(--border);margin:24px 0}
+  footer{color:var(--muted);font-size:12.5px;line-height:1.6}
+  footer .v{font-family:'JetBrains Mono',monospace}
 </style>
 </head>
 <body>
-<div class="top-bar">
-  <h1>Documentation</h1>
-  <a href="index.html" class="back-btn" id="backBtn">&larr; Back to app</a>
-</div>
-<script>try{if(window.self!==window.top)document.getElementById('backBtn').style.display='none';}catch(e){}</script>
 
-<div class="container">
+<p class="lead">Log style samples for your customs worksheet in a few taps. <strong>Set up your API key first</strong> — everything else takes seconds.</p>
 
-<h2>Getting started</h2>
-
-<p>RD Style Sample Log replaces the handwritten customs declaration forms your buyers fill out when traveling to purchase samples. It runs on any phone, tablet, or laptop — no app install needed.</p>
-
-<div class="step-card">
-  <div class="step-header"><span class="step-num">1</span><span class="step-title">Open the app</span></div>
-  <div class="step-body">Go to your app link in any browser. On iPhone, tap the Share button then "Add to Home Screen" to make it feel like a native app.</div>
-</div>
-
-<div class="step-card">
-  <div class="step-header"><span class="step-num">2</span><span class="step-title">One-time setup</span></div>
-  <div class="step-body">Tap the <span class="kbd">&#9881;</span> gear icon in the top-right corner. Enter your send-to email address and your Anthropic API key (needed for photo scanning). Both are saved on your device — you only do this once.</div>
-</div>
-
-<div class="section-divider"></div>
-
-<h2>Adding samples</h2>
-<p>Tap <span class="kbd">+ Add sample</span> and choose one of two methods:</p>
-
-<h3>Option A — Scan photos (recommended)</h3>
-
-<div class="step-card">
-  <div class="step-header"><span class="step-num">1</span><span class="step-title">Take 3 photos</span></div>
-  <div class="step-body">Tap each photo slot to snap a picture of the <strong>price tag</strong>, <strong>content/care label</strong>, and the <strong>garment itself</strong>. You can use 1, 2, or all 3 — more photos means better accuracy.</div>
-</div>
-
-<div class="step-card">
-  <div class="step-header"><span class="step-num">2</span><span class="step-title">Tap "Scan &amp; auto-fill"</span></div>
-  <div class="step-body">The app sends the photos to Claude AI, which reads the tags and fills in the form fields automatically — country of origin, fabric content, price, currency, garment type, and more.</div>
-</div>
-
-<div class="step-card">
-  <div class="step-header"><span class="step-num">3</span><span class="step-title">Review, name, and save</span></div>
-  <div class="step-body">Enter a <strong>style name</strong> (e.g. "Malibu Pant"). Review the auto-filled fields, make any corrections, then tap <strong>Add sample</strong>.</div>
-</div>
-
-<div class="tip-box"><strong>Tip:</strong> The scanner works best with clear, well-lit photos. Hold the phone steady and make sure text on the labels is legible.</div>
-
-<h3>Option B — Enter manually</h3>
-
-<div class="step-card">
-  <div class="step-header"><span class="step-num">1</span><span class="step-title">Fill in the form</span></div>
-  <div class="step-body">Enter the style name, select the country, garment type, fabric content, gender, woven/knit, unit cost, and currency using the dropdown menus. You can also add photos (optional) using the photo slots at the top of the form.</div>
-</div>
-
-<div class="step-card">
-  <div class="step-header"><span class="step-num">2</span><span class="step-title">Tap "Add sample"</span></div>
-  <div class="step-body">The sample is saved to your list. The app remembers the last country and currency you used, so consecutive entries are faster.</div>
-</div>
-
-<div class="section-divider"></div>
-
-<h2>Managing your sample list</h2>
-
-<p>Each sample appears as a card showing the style name, garment type, quantity, fabric content, and cost. You'll also see tags for:</p>
-
-<p>
-  <span class="tag tag-blue">Italy</span> Country &nbsp;
-  <span class="tag tag-green">Photos</span> Has images attached &nbsp;
-  <span class="tag tag-purple">Scanned</span> Was auto-filled from photos
-</p>
-
-<p>If photos are attached, small thumbnails appear on the card.</p>
-
-<div class="step-card">
-  <div class="step-header"><span class="step-num">&bull;</span><span class="step-title">Edit a sample</span></div>
-  <div class="step-body">Tap the <strong>Edit</strong> button on any card to update its details.</div>
-</div>
-
-<div class="step-card">
-  <div class="step-header"><span class="step-num">&bull;</span><span class="step-title">Delete a sample</span></div>
-  <div class="step-body">Tap <strong>Delete</strong> on any card. You'll be asked to confirm before it's removed.</div>
-</div>
-
-<div class="step-card">
-  <div class="step-header"><span class="step-num">&bull;</span><span class="step-title">Import from Excel</span></div>
-  <div class="step-body">Tap <strong>"Import existing .xlsx to continue editing"</strong> at the top to load samples from a previous export file.</div>
-</div>
-
-<div class="section-divider"></div>
-
-<h2>Exporting your data</h2>
-
-<p>When you're ready to submit your customs declaration, tap <span class="kbd">&darr; Save</span> at the bottom of the screen. The app produces two files:</p>
-
-<div class="step-card">
-  <div class="step-header"><span class="step-num">1</span><span class="step-title">Excel file (.xlsx)</span></div>
-  <div class="step-body">
-    <strong>Tab 1 — Shipment Details:</strong> Your customs declaration data with style names, all fields formatted and styled. Unit costs and totals display the correct currency symbol. Totals are grouped by currency at the bottom.<br><br>
-    <strong>Tab 2 — Sample Photos:</strong> Thumbnail images of the price tag, content label, and garment for each sample, embedded directly in the spreadsheet.
+<!-- 1. API KEY -->
+<section class="first">
+  <div class="step-head">
+    <span class="num">1</span>
+    <h2>Add your API key <span class="badge">Do this first</span></h2>
   </div>
-</div>
+  <div class="card tinted">
+    <p>The Anthropic API key unlocks <b>Photo Scan</b> — the feature that reads your tags from photos and fills in the sample details for you.</p>
+    <p class="sub">How to add it</p>
+    <ol>
+      <li>Tap the <b>⚙ gear icon</b> in the top-right corner.</li>
+      <li>Paste your key into the <b>Anthropic API key</b> box.</li>
+      <li>That's it — it saves automatically and checks itself.</li>
+    </ol>
+    <p class="sub">Did it work? Check the pill</p>
+    <p>A small pill sits at the top of the app and tells you the key's status:</p>
+    <div class="pills">
+      <span class="pill ok"><span class="dot"></span>Connected</span>
+      <span class="pill bad"><span class="dot"></span>No key</span>
+    </div>
+    <p style="margin-top:8px"><b>Green = ready to scan.</b> If it's red, tap the pill to try again. The label tells you why:</p>
+    <div class="legend">
+      <div><span class="tag bad">No key</span> &nbsp;Nothing entered yet — add your key.</div>
+      <div><span class="tag bad">Invalid key</span> &nbsp;The key was rejected. Re-copy and paste it carefully.</div>
+      <div><span class="tag bad">Offline</span> &nbsp;The app couldn't reach the internet/API at all.</div>
+      <div><span class="tag bad">Rate limited / Check failed</span> &nbsp;Wait a few seconds, then tap the pill to retry.</div>
+    </div>
+    <div class="note">
+      <span class="ico">⚠️</span>
+      <div><b>Stuck on "Offline"?</b> Check your connection. If you opened the app by double-clicking the file, open it through a web address instead — or add it to your home screen — so it can reach the API.</div>
+    </div>
+    <div class="note tip">
+      <span class="ico">🔒</span>
+      <div>Your key is stored <b>only on this device</b>. It's never shared with anyone but Anthropic when you scan.</div>
+    </div>
+  </div>
+</section>
 
-<div class="step-card">
-  <div class="step-header"><span class="step-num">2</span><span class="step-title">ZIP file — full-resolution garment photos</span></div>
-  <div class="step-body">A separate ZIP download containing the original high-resolution garment photos, named by style (e.g. <span class="kbd">Malibu_Pant.jpg</span>). These are full camera quality, suitable for 3D rendering or product photography.</div>
-</div>
+<!-- 2. ADD A SAMPLE -->
+<section>
+  <div class="step-head">
+    <span class="num">2</span>
+    <h2>Add a sample</h2>
+  </div>
+  <div class="card">
+    <p>Tap <b>+ Add sample</b>. There are two ways to fill it in:</p>
+    <p class="sub">📷 Scan with photos (fastest)</p>
+    <ol>
+      <li>Take or upload up to four photos: the <b>price tag</b>, the <b>content/care label</b>, the <b>garment</b>, and the <b>country of origin</b>.</li>
+      <li>Tap <b>Scan &amp; auto-fill</b>.</li>
+      <li>Claude reads the labels and fills the form. <b>Review</b> the details, fix anything that looks off, then tap <b>Save</b>.</li>
+    </ol>
+    <p class="sub">✍️ Enter it manually</p>
+    <ul>
+      <li>Switch to manual entry and type the details yourself.</li>
+      <li>You can still attach a photo if you'd like one on file.</li>
+    </ul>
+  </div>
+</section>
 
-<div class="tip-box"><strong>On mobile:</strong> If you see a <span class="kbd">&uarr; Share</span> button, tap it to send both files via email, AirDrop, WhatsApp, or any sharing method — with the files already attached.</div>
+<!-- 3. REVIEW -->
+<section>
+  <div class="step-head">
+    <span class="num">3</span>
+    <h2>Review &amp; edit</h2>
+  </div>
+  <div class="card">
+    <p>Saved samples appear in the list. The pills at the top keep a running total of your <b>sample count</b>, <b>total quantity</b>, and <b>value</b> by currency.</p>
+    <p style="margin-top:8px">Tap any sample to <b>edit</b> it, or remove it if it was added by mistake.</p>
+  </div>
+</section>
 
-<div class="section-divider"></div>
+<!-- 4. EXPORT -->
+<section>
+  <div class="step-head">
+    <span class="num">4</span>
+    <h2>Export &amp; send</h2>
+  </div>
+  <div class="card">
+    <ul>
+      <li><b>Save</b> creates an Excel file (<span class="mono">.xlsx</span>) with all your sample details plus thumbnail photos.</li>
+      <li>You can also export a <b>ZIP</b> of the full-resolution photos, named by style.</li>
+      <li>On a phone, <b>Share</b> sends the file straight to email, AirDrop, or messaging. Set a default address in Settings so it's pre-filled.</li>
+    </ul>
+  </div>
+</section>
 
-<h2>After exporting</h2>
+<!-- 5. CONTINUE LATER -->
+<section>
+  <div class="step-head">
+    <span class="num">5</span>
+    <h2>Continue a list later</h2>
+  </div>
+  <div class="card">
+    <p>Use <b>Import existing .xlsx</b> and pick a file you exported earlier to pick up right where you left off.</p>
+  </div>
+</section>
 
-<p>Your sample list stays in the app after exporting so you can re-export if needed. When you come back to the app 5 or more minutes after an export, it will ask if you want to clear the list and start fresh for your next session.</p>
+<!-- 6. SETTINGS -->
+<section>
+  <div class="step-head">
+    <span class="num">6</span>
+    <h2>Settings (⚙)</h2>
+  </div>
+  <div class="card">
+    <ul>
+      <li><b>Send-to email</b> — pre-fills the share recipient.</li>
+      <li><b>Anthropic API key</b> — for Photo Scan (see step 1).</li>
+      <li><b>View documentation</b> — opens this help page.</li>
+      <li><b>Clear all samples</b> — wipes everything and starts fresh.</li>
+    </ul>
+  </div>
+</section>
 
-<div class="warn-box"><strong>Important:</strong> Photos are stored in your browser's memory during the session. If you have a large number of samples (50+), export at the end of each day to make sure nothing is lost.</div>
+<hr>
+<footer>
+  Everything is saved on your device only. Photos are sent to Anthropic just to read the labels during a scan — nothing else leaves your phone.<br>
+  <span class="v">RD Style Sample Log · v17</span>
+</footer>
 
-<div class="section-divider"></div>
-
-<h2>Settings</h2>
-
-<p>Tap the <span class="kbd">&#9881;</span> gear icon in the top bar to access:</p>
-
-<div class="step-card">
-  <div class="step-header"><span class="step-num">&bull;</span><span class="step-title">Send-to email address</span></div>
-  <div class="step-body">Pre-fills the recipient when using the Share feature on mobile. Optional.</div>
-</div>
-
-<div class="step-card">
-  <div class="step-header"><span class="step-num">&bull;</span><span class="step-title">Anthropic API key</span></div>
-  <div class="step-body">Required for the photo scan feature. Your API key will be provided by management. The key is stored on your device only and is never sent anywhere except directly to the Anthropic API.</div>
-</div>
-
-<div class="info-box"><strong>Privacy:</strong> All sample data and photos are stored locally on your device. Nothing is uploaded to any server. The only external connection is when you use the photo scan feature, which sends images to the Anthropic API for analysis.</div>
-
-<div class="section-divider"></div>
-
-<h2>Troubleshooting</h2>
-
-<div class="step-card">
-  <div class="step-header"><span class="step-num">?</span><span class="step-title">Photo scan not working</span></div>
-  <div class="step-body">Make sure your API key is saved (check the gear icon). You need an internet connection for scanning. If you see an error, the red box will show exactly what went wrong — common issues are invalid API key or no network.</div>
-</div>
-
-<div class="step-card">
-  <div class="step-header"><span class="step-num">?</span><span class="step-title">Share button not showing</span></div>
-  <div class="step-body">The Share button only appears on mobile devices (iPhone, iPad, Android). On desktop, use the Save button to download files directly.</div>
-</div>
-
-<div class="step-card">
-  <div class="step-header"><span class="step-num">?</span><span class="step-title">Data disappeared after reopening</span></div>
-  <div class="step-body">If you cleared your browser data or are using private/incognito mode, locally stored data will be lost. Always export before clearing your browser. Photos from large sessions may also exceed browser storage limits — export regularly.</div>
-</div>
-
-<div class="step-card">
-  <div class="step-header"><span class="step-num">?</span><span class="step-title">Excel not opening correctly</span></div>
-  <div class="step-body">The exported file works best in Microsoft Excel or Google Sheets. Some lightweight spreadsheet apps may not display embedded photos in Tab 2.</div>
-</div>
-
-<div class="section-divider"></div>
-
-<p style="text-align:center;color:var(--muted);font-size:13px;margin-top:24px">RD Style Sample Log — Built for the road.</p>
-
-</div>
 </body>
 </html>
