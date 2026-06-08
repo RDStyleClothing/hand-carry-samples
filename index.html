@@ -119,7 +119,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <body>
 <div class="top-bar">
   <div style="display:flex;justify-content:space-between;align-items:center">
-    <div style="min-width:0;flex:1"><h1>RD Style Sample Log</h1><div class="sub">Customs declaration worksheet</div><div style="font-size:10px;font-family:'JetBrains Mono',monospace;opacity:0.55;margin-top:3px;letter-spacing:0.3px">v21</div></div>
+    <div style="min-width:0;flex:1"><h1>RD Style Sample Log</h1><div class="sub">Customs declaration worksheet</div><div style="font-size:10px;font-family:'JetBrains Mono',monospace;opacity:0.55;margin-top:3px;letter-spacing:0.3px">v22</div></div>
     <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
       <button id="apiPill" class="api-pill disconnected" onclick="onApiPillTap()"><span class="dot"></span><span id="apiPillLabel">No key</span></button>
       <button onclick="toggleSettings()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">&#9881;</button>
@@ -136,7 +136,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   </div>
 </div>
 <div class="stats-row"><div class="stat-pill">Samples <span class="num" id="statLines">0</span></div><div class="stat-pill">Total qty <span class="num" id="statQty">0</span></div><div class="stat-pill">Value <span class="num" id="statValue">&mdash;</span></div></div>
-<div class="import-section"><button class="import-btn" onclick="document.getElementById('fileInput').click()">&uarr; Import existing .xlsx to continue editing</button><input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none" onchange="importFile(event)"></div>
+<div class="import-section"><button class="import-btn" onclick="document.getElementById('fileInput').click()">&uarr; Import .xlsx (+ photo .zip) to continue editing</button><input type="file" id="fileInput" accept=".xlsx,.xls,.zip" multiple style="display:none" onchange="importFile(event)"></div>
 <div class="entries-list" id="entriesList"></div>
 <div class="fab-group">
   <button class="fab fab-export" onclick="shareFile()" id="btnShare" style="display:none">&uarr; Share</button>
@@ -310,7 +310,7 @@ if(ct.indexOf('drawing+xml')===-1){ct=ct.replace('</Types>','<Override PartName=
 zip.file(ctFile,ct);
 return await zip.generateAsync({type:'blob'});}
 
-async function exportZip(dateStr){var zip=new JSZip();var count=0;for(var i=0;i<entries.length;i++){var e=entries[i];if(!e.imageId||!imageStore[e.imageId])continue;var imgs=imageStore[e.imageId];var num=String(i+1).padStart(2,'0');var styleName=e.style?e.style.replace(/[^a-zA-Z0-9 ]/g,'').replace(/ +/g,'_'):('Sample_'+num);var types=[{key:'priceFull',suffix:'_price_tag'},{key:'contentFull',suffix:'_content_label'},{key:'garmentFull',suffix:'_garment'},{key:'originFull',suffix:'_origin'}];for(var ti=0;ti<types.length;ti++){var t=types[ti];var fullRes=imgs[t.key];if(!fullRes)continue;var b64=fullRes.split(',')[1];if(!b64)continue;zip.file(styleName+t.suffix+'.jpg',b64,{base64:true});count++;}}if(count===0)return null;var blob=await zip.generateAsync({type:'blob'});return new File([blob],'Sample_Photos_FullRes_'+dateStr+'.zip',{type:'application/zip'});}
+async function exportZip(dateStr){var zip=new JSZip();var count=0;for(var i=0;i<entries.length;i++){var e=entries[i];if(!e.imageId||!imageStore[e.imageId])continue;var imgs=imageStore[e.imageId];var num=String(i+1).padStart(2,'0');var styleName=e.style?e.style.replace(/[^a-zA-Z0-9 ]/g,'').replace(/ +/g,'_'):'Sample';var types=[{key:'priceFull',suffix:'_price_tag'},{key:'contentFull',suffix:'_content_label'},{key:'garmentFull',suffix:'_garment'},{key:'originFull',suffix:'_origin'}];for(var ti=0;ti<types.length;ti++){var t=types[ti];var fullRes=imgs[t.key];if(!fullRes)continue;var b64=fullRes.split(',')[1];if(!b64)continue;zip.file(num+'_'+styleName+t.suffix+'.jpg',b64,{base64:true});count++;}}if(count===0)return null;var blob=await zip.generateAsync({type:'blob'});return new File([blob],'Sample_Photos_FullRes_'+dateStr+'.zip',{type:'application/zip'});}
 
 async function downloadOnly(){if(!entries.length){toast('No samples to save');return;}toast('Building export...');var r=await buildFile();downloadFallback(r.file,r.filename);var zipFile=await exportZip(r.dateStr);if(zipFile){setTimeout(function(){downloadFallback(zipFile,zipFile.name);},1000);}localStorage.setItem('hc_last_export',Date.now().toString());}
 
@@ -328,7 +328,13 @@ function onApiPillTap(){var p=document.getElementById('settingsPanel');if(p.styl
 var _keyValidateTimer=null;
 function onKeyFieldInput(val){val=(val||'').trim();localStorage.setItem('scan_api_key',val);if(_keyValidateTimer)clearTimeout(_keyValidateTimer);if(!val){setApiPill('disconnected','No key');return;}_keyValidateTimer=setTimeout(function(){validateApiKey(val,false);},900);}
 try{document.getElementById('recipientEmail').value=localStorage.getItem('hc_email')||'';document.getElementById('settingsApiKey').value=localStorage.getItem('scan_api_key')||'';}catch(e){}
-function importFile(event){var file=event.target.files[0];if(!file)return;var reader=new FileReader();reader.onload=function(e){try{var wb=XLSX.read(e.target.result,{type:'array'});var ws=wb.Sheets[wb.SheetNames[0]];var data=XLSX.utils.sheet_to_json(ws,{header:1});
+async function importFile(event){var files=Array.prototype.slice.call(event.target.files||[]);event.target.value='';if(!files.length)return;
+var xlsxFile=files.filter(function(f){return /\.xlsx?$/i.test(f.name);})[0];
+var zipFile=files.filter(function(f){return /\.zip$/i.test(f.name);})[0];
+if(!xlsxFile){toast('Select your .xlsx file');return;}
+function readBuf(file){return file.arrayBuffer?file.arrayBuffer():new Promise(function(res,rej){var r=new FileReader();r.onload=function(){res(r.result);};r.onerror=function(){rej(r.error);};r.readAsArrayBuffer(file);});}
+try{
+var wb=XLSX.read(await readBuf(xlsxFile),{type:'array'});var ws=wb.Sheets[wb.SheetNames[0]];var data=XLSX.utils.sheet_to_json(ws,{header:1});
 /* Find the header row: any row containing a cell mentioning "country" (column-position independent) */
 var hr=-1;data.forEach(function(row,i){if(hr<0&&row&&row.some(function(cell){return cell&&String(cell).toLowerCase().indexOf('country')!==-1;}))hr=i;});
 if(hr<0){toast('Could not find header row');return;}
@@ -344,13 +350,33 @@ else if(h.indexOf('woven')!==-1||h.indexOf('knit')!==-1)col.woven=idx;
 else if(h.indexOf('unit cost')!==-1||(h.indexOf('cost')!==-1&&h.indexOf('total')===-1))col.cost=idx;
 else if(h.indexOf('currency')!==-1)col.currency=idx;});
 var get=function(r,key){return col[key]!=null?r[col[key]]:undefined;};
-var imported=0;for(var i=hr+1;i<data.length;i++){var r=data[i];if(!r)continue;
+var newEntries=[];for(var i=hr+1;i<data.length;i++){var r=data[i];if(!r)continue;
 var country=get(r,'country');var garment=get(r,'garment');var style=get(r,'style');
 /* Skip blank spacer rows and the currency-subtotal rows at the bottom */
 if((country==null||country==='')&&(garment==null||garment==='')&&(style==null||style==='')) continue;
 if(r.join(' ').toLowerCase().indexOf('total:')!==-1) continue;
-entries.push({style:style||'',country:country||'',qty:get(r,'qty')||1,garment:garment||'',content:get(r,'content')||'',gender:get(r,'gender')||'',woven:get(r,'woven')||'',cost:get(r,'cost')||'',currency:get(r,'currency')||''});imported++;}
-persist();render();toast(imported?('Imported '+imported+' samples'):'No samples found in file');}catch(err){toast('Error reading file');}};reader.readAsArrayBuffer(file);event.target.value='';}
+newEntries.push({style:style||'',country:country||'',qty:get(r,'qty')||1,garment:garment||'',content:get(r,'content')||'',gender:get(r,'gender')||'',woven:get(r,'woven')||'',cost:get(r,'cost')||'',currency:get(r,'currency')||''});}
+if(!newEntries.length){toast('No samples found in file');return;}
+/* If a photo ZIP was supplied, match its images to the imported rows and store them like in-app captures */
+var photoCount=0;
+if(zipFile){toast('Matching photos\u2026');
+var zip=await JSZip.loadAsync(await readBuf(zipFile));
+var zipFiles={};zip.forEach(function(path,f){if(!f.dir)zipFiles[path.split('/').pop().toLowerCase()]=f;});
+var slots=[{k:'price',sfx:'_price_tag'},{k:'content',sfx:'_content_label'},{k:'garment',sfx:'_garment'},{k:'origin',sfx:'_origin'}];
+for(var n=0;n<newEntries.length;n++){var e=newEntries[n];
+var num=String(n+1).padStart(2,'0');
+var nm=(e.style?e.style.replace(/[^a-zA-Z0-9 ]/g,'').replace(/ +/g,'_'):'Sample').toLowerCase();
+var photos={price:null,content:null,garment:null,origin:null};var got=false;
+for(var si=0;si<slots.length;si++){var sfx=slots[si].sfx;
+/* match by index first (v22+ exports), then style name, then legacy blank-style name */
+var cands=[num+'_'+nm+sfx+'.jpg',nm+sfx+'.jpg','sample_'+num+sfx+'.jpg',num+'_'+nm+sfx+'.jpeg',nm+sfx+'.jpeg'];
+var ff=null;for(var ci=0;ci<cands.length;ci++){if(zipFiles[cands[ci]]){ff=zipFiles[cands[ci]];break;}}
+if(ff){photos[slots[si].k]='data:image/jpeg;base64,'+(await ff.async('base64'));got=true;}}
+if(got){var id=await storePhotos(photos);if(id){e.imageId=id;photoCount++;}}}}
+for(var j=0;j<newEntries.length;j++)entries.push(newEntries[j]);
+persist();render();
+toast('Imported '+newEntries.length+' sample'+(newEntries.length===1?'':'s')+(photoCount?(' \u00B7 '+photoCount+' with photos'):''));
+}catch(err){toast('Error reading file');}}
 (function(){var ua=navigator.userAgent||'';var m=/iPhone|iPad|iPod|Android/i.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);if(m&&navigator.canShare&&navigator.share){document.getElementById('btnShare').style.display='';document.getElementById('btnSave').style.flex='0.8';}})();
 // Initialize: open IndexedDB, load images into memory, then render
 (async function init(){
@@ -367,7 +393,7 @@ persist();render();toast(imported?('Imported '+imported+' samples'):'No samples 
       <span style="font-size:15px;font-weight:600">Documentation</span>
       <button onclick="document.getElementById('docsPopup').classList.remove('open')" style="background:var(--bg);border:none;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted)">&times;</button>
     </div>
-    <iframe src="docs.html?v=21" style="flex:1;border:none;width:100%"></iframe>
+    <iframe src="docs.html?v=22" style="flex:1;border:none;width:100%"></iframe>
   </div>
 </div>
 </body>
