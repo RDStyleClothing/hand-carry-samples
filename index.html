@@ -163,7 +163,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <body>
 <div class="top-bar">
   <div style="display:flex;justify-content:space-between;align-items:center">
-    <div style="min-width:0;flex:1"><h1>RD Style Sample Log</h1><div class="sub">Customs declaration worksheet</div><div style="font-size:10px;font-family:'JetBrains Mono',monospace;opacity:0.55;margin-top:3px;letter-spacing:0.3px">v30</div></div>
+    <div style="min-width:0;flex:1"><h1>RD Style Sample Log</h1><div class="sub">Customs declaration worksheet</div><div style="font-size:10px;font-family:'JetBrains Mono',monospace;opacity:0.55;margin-top:3px;letter-spacing:0.3px">v32</div></div>
     <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
       <button id="apiPill" class="api-pill disconnected" onclick="onApiPillTap()" aria-label="Anthropic API connection status — tap to re-check"><span class="dot" aria-hidden="true"></span><span id="apiPillLabel">No key</span></button>
       <button onclick="toggleSettings()" aria-label="Settings" title="Settings" style="background:rgba(255,255,255,0.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">&#9881;</button>
@@ -189,7 +189,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     </div>
     <div id="syncIn" style="display:none">
       <div style="font-size:12px;background:rgba(255,255,255,0.1);border-radius:8px;padding:8px 10px;line-height:1.5">Signed in as <b id="syncWho"></b> <span style="opacity:0.7">&middot; samples sync across signed-in devices</span></div>
-      <div class="settings-note">Photos sync too: previews travel with each sample; full copies (capped at 1600px) upload in the background and download when you open or export them. Full-resolution originals stay on the device that took them.</div>
+      <div class="settings-note">Photos sync too: previews travel with each sample; full copies upload in the background and download when you open or export them. The garment photo syncs at full resolution; tag and label photos at 1600px.</div>
       <button onclick="syncSignOut()" style="width:100%;margin-top:8px;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;background:rgba(255,255,255,0.1);color:#fff">Sign out (keeps this device&rsquo;s samples)</button>
     </div>
     <div id="syncErr" style="display:none;font-size:11px;color:#FFD2D2;background:rgba(226,75,74,0.25);border-radius:8px;padding:8px 10px;margin-top:8px;line-height:1.45"></div>
@@ -1269,9 +1269,9 @@ window.addEventListener('beforeunload',function(ev){
 /* ===== v29: CROSS-DEVICE SYNC — Firebase Auth (email/password) + Firestore =====
    Per-sample metadata sync keyed on the v28 uid; v30 adds photo sync —
    thumbnails inside the sample doc, ~1600px fulls in Firebase Storage (see
-   the PHOTO SYNC block below). Full-resolution originals never leave the
-   capture device. Signed out, the app behaves exactly as v28 — sync is
-   additive and opt-in.
+   the PHOTO SYNC block below) at full resolution — every device exports
+   the same quality the capture device holds. Signed out, the app behaves
+   exactly as v28 — sync is additive and opt-in.
 
    Conflict model: per-sample last-write-wins fenced by a rev counter, NOT a
    whole-doc transaction like RD Expense. Two reasons: per-sample docs mean
@@ -1318,12 +1318,14 @@ function syncMeta(){if(!syncOn())return;var le=parseInt(localStorage.getItem('hc
    Thumbnails travel INSIDE the Firestore sample doc (doc.thumbs, ~15KB per
    slot), so previews reach every device through the same offline-safe channel
    as the metadata — no separate download path, no extra reads. Firebase
-   Storage carries only a ~1600px JPEG per slot at
+   Storage carries one file per slot (garment at original resolution, the
+   label shots capped per PHOTO_CAP) at
    users/{uid}/photos/{sampleUid}/{slot}.jpg, uploaded through a persistent
    queue (Storage, unlike Firestore, has no offline persistence — a failed
    upload must survive a reload) and fetched lazily: when the lightbox opens
    on a thumb-only slot, or before an export on a device that didn't take the
-   photos. Full-resolution originals never leave the capture device.
+   photos. The garment shot goes up untouched, so every device exports it at
+   full resolution; label shots travel at 1600px (see PHOTO_CAP).
 
    Change detection is per-slot by thumbnail string equality: a doc arriving
    with the same thumb this device already has means that slot didn't change,
@@ -1331,6 +1333,10 @@ function syncMeta(){if(!syncOn())return;var le=parseInt(localStorage.getItem('hc
    photo state exactly as rev fences metadata; pfr ("photos fetched rev") is
    the local-only high-water mark of what this device has merged. */
 var PHOTO_SLOTS=['price','content','garment','origin'];
+/* ===== SINGLE SOURCE OF TRUTH: PER-SLOT UPLOAD RESOLUTION =====
+   0 = no cap (original bytes). The garment shot carries the detail a broker
+   or buyer actually inspects; tags and labels stay legible at 1600px. */
+var PHOTO_CAP={price:1600,content:1600,garment:0,origin:1600};
 function photoSlotsOf(e){var rec=e&&e.imageId&&imageStore[e.imageId];if(!rec)return[];return PHOTO_SLOTS.filter(function(s){return !!rec[s+'Full'];});}
 function storagePhotoRef(sampleUid,slot){return firebase.storage().ref('users/'+SYNC.user.uid+'/photos/'+sampleUid+'/'+slot+'.jpg');}
 function photoQ(){try{return JSON.parse(localStorage.getItem('hc_photo_queue')||'[]');}catch(e){return[];}}
@@ -1362,9 +1368,11 @@ async function pumpPhotoQueue(){
       for(var u=0;u<j.up.length;u++){
         var s=j.up[u],full=rec[s+'Full'];
         if(!full)continue; /* nothing local to upload for this slot */
-        var capped=await resizeImage(full,1600);
-        if(capped===null)capped=full; /* undecodable — ship as-is, same rule as thumbs */
-        try{await storagePhotoRef(j.uid,s).putString(capped,'data_url');}
+        /* v32: per-slot policy — garment uploads untouched, the label shots
+           cap at PHOTO_CAP[s]. An undecodable photo ships as-is (thumb rule). */
+        var payload=full;
+        if(PHOTO_CAP[s]){var capped=await resizeImage(full,PHOTO_CAP[s]);if(capped!==null)payload=capped;}
+        try{await storagePhotoRef(j.uid,s).putString(payload,'data_url');}
         catch(err){okAll=false;break;}
       }
       if(!okAll)break; /* leave the job queued; retried on reconnect/reload */
@@ -1612,6 +1620,15 @@ window.addEventListener('offline',function(){updateStats();});
   var added=false,_b=Date.now();
   entries.forEach(function(e,i){if(!e.uid){e.uid=newUid();added=true;}if(!e.at){e.at=_b+i;added=true;}if(e.imageId&&imageStore[e.imageId]&&!e.photoRev){e.photoRev=1;added=true;}});
   if(added)persistQuiet();
+  /* v32 one-time: garment photos synced under the v30/v31 policy may sit in
+     Storage at the wrong resolution. Re-queue every slot this device holds an
+     original for; the pump applies the per-slot policy. Drains once signed in. */
+  try{
+    if(!localStorage.getItem('hc_v32_reup')){
+      entries.forEach(function(e){var sl=photoSlotsOf(e);if(sl.length&&e.photoRev)enqueuePhotoSync(e.uid,sl,[]);});
+      localStorage.setItem('hc_v32_reup','1');
+    }
+  }catch(e){}
   render();
   initSync();
   validateApiKey(localStorage.getItem('scan_api_key')||'',false);
@@ -1630,7 +1647,7 @@ window.addEventListener('offline',function(){updateStats();});
       <span style="font-size:15px;font-weight:600">Documentation</span>
       <button onclick="document.getElementById('docsPopup').classList.remove('open')" style="background:var(--bg);border:none;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted)">&times;</button>
     </div>
-    <iframe src="docs.html?v=30" style="flex:1;border:none;width:100%"></iframe>
+    <iframe src="docs.html?v=32" style="flex:1;border:none;width:100%"></iframe>
   </div>
 </div>
 </body>
