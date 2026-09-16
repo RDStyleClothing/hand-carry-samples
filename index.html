@@ -9,6 +9,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
@@ -134,9 +135,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .api-key-status.saved{color:var(--accent)}
 .manual-photo-section{margin-bottom:16px}
 .manual-photo-section .section-label{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px}
-.api-pill{display:inline-flex;align-items:center;gap:9px;white-space:nowrap;border:none;border-radius:14px;padding:6px 14px 6px 11px;font-size:11px;font-weight:600;font-family:inherit;cursor:pointer;color:#fff;background:rgba(0,0,0,0.22);transition:background 0.2s}
+.api-pill{display:inline-flex;align-items:center;gap:0;white-space:nowrap;border:none;border-radius:14px;padding:6px 14px 6px 11px;font-size:11px;font-weight:600;font-family:inherit;cursor:pointer;color:#fff;background:rgba(0,0,0,0.22);transition:background 0.2s}
 .api-pill:hover{background:rgba(0,0,0,0.30)}
-.api-pill .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;background:#9CA3A0;transition:background 0.25s,box-shadow 0.25s}
+.api-pill .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-right:9px;background:#9CA3A0;transition:background 0.25s,box-shadow 0.25s}
 .api-pill.connected .dot{background:#3DDC84;box-shadow:0 0 3px 0 rgba(61,220,132,0.9)}
 .api-pill.disconnected .dot{background:#FF5A5A;box-shadow:0 0 3px 0 rgba(255,90,90,0.85)}
 .api-pill.checking .dot{background:#F2C744;box-shadow:0 0 3px 0 rgba(242,199,68,0.85);animation:pulse 1s infinite}
@@ -162,7 +163,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <body>
 <div class="top-bar">
   <div style="display:flex;justify-content:space-between;align-items:center">
-    <div style="min-width:0;flex:1"><h1>RD Style Sample Log</h1><div class="sub">Customs declaration worksheet</div><div style="font-size:10px;font-family:'JetBrains Mono',monospace;opacity:0.55;margin-top:3px;letter-spacing:0.3px">v29</div></div>
+    <div style="min-width:0;flex:1"><h1>RD Style Sample Log</h1><div class="sub">Customs declaration worksheet</div><div style="font-size:10px;font-family:'JetBrains Mono',monospace;opacity:0.55;margin-top:3px;letter-spacing:0.3px">v30</div></div>
     <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
       <button id="apiPill" class="api-pill disconnected" onclick="onApiPillTap()" aria-label="Anthropic API connection status — tap to re-check"><span class="dot" aria-hidden="true"></span><span id="apiPillLabel">No key</span></button>
       <button onclick="toggleSettings()" aria-label="Settings" title="Settings" style="background:rgba(255,255,255,0.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">&#9881;</button>
@@ -188,7 +189,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     </div>
     <div id="syncIn" style="display:none">
       <div style="font-size:12px;background:rgba(255,255,255,0.1);border-radius:8px;padding:8px 10px;line-height:1.5">Signed in as <b id="syncWho"></b> <span style="opacity:0.7">&middot; samples sync across signed-in devices</span></div>
-      <div class="settings-note">Photos stay on the device that took them for now &mdash; photo sync arrives in Phase&nbsp;2.</div>
+      <div class="settings-note">Photos sync too: previews travel with each sample; full copies (capped at 1600px) upload in the background and download when you open or export them. Full-resolution originals stay on the device that took them.</div>
       <button onclick="syncSignOut()" style="width:100%;margin-top:8px;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;background:rgba(255,255,255,0.1);color:#fff">Sign out (keeps this device&rsquo;s samples)</button>
     </div>
     <div id="syncErr" style="display:none;font-size:11px;color:#FFD2D2;background:rgba(226,75,74,0.25);border-radius:8px;padding:8px 10px;margin-top:8px;line-height:1.45"></div>
@@ -285,6 +286,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 <script>
 var entries=[],editIndex=-1,scanPhotos={price:null,content:null,garment:null,origin:null},manualPhotos={price:null,content:null,garment:null,origin:null};
+var _hydratedPhotos={}; /* v30: what Edit opened with, for per-slot change detection */
 var imageStore={};
 var db=null;
 
@@ -394,7 +396,9 @@ function updateStats(){
   if(inc)html+='<div class="stat-pill warn tap" onclick="jumpToIncomplete()" title="Tap to open the first incomplete sample">⚠ Incomplete <span class="num">'+inc+'</span></div>';
   if(!st.none)html+='<div class="stat-pill '+(st.clean?'ok':'warn')+'">'+(st.clean?'✓ ':'↑ ')+esc(st.label)+'</div>';
   if(typeof SYNC!=='undefined'&&SYNC.user){
-    if(SYNC.pend>0)html+='<div class="stat-pill warn tap" onclick="openSyncSettings()" title="Writes waiting to reach the server \u2014 they survive a reload and send when connected">\u2601 Syncing '+SYNC.pend+'</div>';
+    var pq=(typeof photoQCount==='function')?photoQCount():0;
+    if(navigator.onLine===false&&(SYNC.pend>0||pq>0))html+='<div class="stat-pill warn tap" onclick="openSyncSettings()" title="Offline \u2014 changes and photos queue on this device and sync when you reconnect">\u2601 Offline \u00b7 queued</div>';
+    else if(SYNC.pend>0||pq>0)html+='<div class="stat-pill warn tap" onclick="openSyncSettings()" title="Waiting to reach the server \u2014 queued work survives a reload">\u2601 Syncing '+(SYNC.pend+pq)+(pq?' \u00b7 '+pq+' photo'+(pq===1?'':'s'):'')+'</div>';
     else if(navigator.onLine===false)html+='<div class="stat-pill warn tap" onclick="openSyncSettings()" title="Offline \u2014 changes queue on this device and sync when you reconnect">\u2601 Offline \u00b7 queued</div>';
     else html+='<div class="stat-pill ok tap" onclick="openSyncSettings()" title="All changes synced">\u2601 Synced</div>';
   }
@@ -470,6 +474,7 @@ function resetManualSlot(type){var slot=document.getElementById('mslot-'+type);s
 function openForm(idx){
   editIndex=typeof idx==='number'?idx:-1;
   manualPhotos={price:null,content:null,garment:null,origin:null};
+  _hydratedPhotos={};
   ['price','content','garment','origin'].forEach(function(t){resetManualSlot(t);});
   document.getElementById('modalTitle').textContent=editIndex>=0?'Edit sample':'Add sample';
   document.getElementById('btnSubmit').textContent=editIndex>=0?'Save changes':'Submit sample';
@@ -495,6 +500,7 @@ function openForm(idx){
         var full=imgs[t+'Full']||imgs[t+'Thumb'];
         if(!full)return;
         manualPhotos[t]=full;
+        _hydratedPhotos[t]=full;
         fillSlot('mslot-',t,full,'clearManualSlot');
       });
     }
@@ -574,8 +580,27 @@ async function saveEntry(){
   if(!entry.garment){toast('Please select a garment type');return;}
   var btn=document.getElementById('btnSubmit');btn.disabled=true;
   try{
-    var imgId=await storePhotos(manualPhotos);
+    /* v30: per-slot change detection against what Edit opened with. Untouched
+       photos keep the image record byte-for-byte — no re-encode, no photoRev
+       bump, no re-upload, and (critically) no thumb-of-thumb degradation when
+       a synced-in sample is edited on a device that never held the originals. */
+    var upSlots=[],delSlots=[],photosChanged=editIndex<0;
     if(editIndex>=0){
+      ['price','content','garment','origin'].forEach(function(s){
+        var now=manualPhotos[s]||null,was=_hydratedPhotos[s]||null;
+        if(now===was)return;
+        photosChanged=true;
+        if(now)upSlots.push(s);else delSlots.push(s);
+      });
+    }
+    if(editIndex>=0&&!photosChanged){
+      entries[editIndex]=Object.assign(entries[editIndex],entry);
+      if(!entries[editIndex].uid)entries[editIndex].uid=newUid();
+      entries[editIndex].rev=(entries[editIndex].rev||0)+1;
+      syncPush(entries[editIndex]);
+      toast('Sample updated');
+    }else if(editIndex>=0){
+      var imgId=await storePhotos(manualPhotos);
       var oldId=entries[editIndex].imageId;
       if(imgId)entry.imageId=imgId;
       /* Drop the superseded image record so it can't leak in IndexedDB. */
@@ -583,14 +608,19 @@ async function saveEntry(){
       if(!imgId&&oldId){delete imageStore[oldId];dbDelete(oldId);entry.imageId=undefined;}
       entries[editIndex]=Object.assign(entries[editIndex],entry);
       if(!entries[editIndex].uid)entries[editIndex].uid=newUid();
+      entries[editIndex].photoRev=(entries[editIndex].photoRev||0)+1;
+      entries[editIndex].pfr=entries[editIndex].photoRev;
       entries[editIndex].rev=(entries[editIndex].rev||0)+1;
       syncPush(entries[editIndex]);
+      enqueuePhotoSync(entries[editIndex].uid,upSlots,delSlots);
       toast('Sample updated');
     }else{
+      var imgId=await storePhotos(manualPhotos);
       entry.uid=newUid();entry.rev=1;entry.at=Date.now();
-      if(imgId)entry.imageId=imgId;
+      if(imgId){entry.imageId=imgId;entry.photoRev=1;entry.pfr=1;}
       entries.push(entry);
       syncPush(entry);
+      if(imgId)enqueuePhotoSync(entry.uid,photoSlotsOf(entry),[]);
       var miss=missingFields(entry);
       toast(miss.length?'Sample submitted — still missing '+miss.join(', '):'Sample submitted');
     }
@@ -613,7 +643,7 @@ function deleteEntry(i){
   var label=(e.style?e.style+' — ':'')+(e.garment||'sample');
   if(!confirm('Delete #'+(i+1)+' '+label+'?'+(e.imageId?'\n\nIts photos will be deleted too.':'')))return;
   if(e.imageId){delete imageStore[e.imageId];dbDelete(e.imageId);}
-  entries.splice(i,1);syncDelete(e.uid);persist();render();toast('Sample deleted');
+  entries.splice(i,1);syncDelete(e.uid);deleteStoragePhotos(e.uid);persist();render();toast('Sample deleted');
 }
 
 /* ===== SCANNER ===== */
@@ -777,9 +807,11 @@ async function saveScanEntry(){
   if(!entry.garment){toast('Please select a garment type');return;}
   try{
     var imgId=await storePhotos(scanPhotos);
-    if(imgId)entry.imageId=imgId;
     entry.uid=newUid();entry.rev=1;entry.at=Date.now();
-    entries.push(entry);syncPush(entry);persist();closeAll();render();
+    if(imgId){entry.imageId=imgId;entry.photoRev=1;entry.pfr=1;}
+    entries.push(entry);syncPush(entry);
+    if(imgId)enqueuePhotoSync(entry.uid,photoSlotsOf(entry),[]);
+    persist();closeAll();render();
     var miss=missingFields(entry);
     toast(miss.length?'Sample submitted — still missing '+miss.join(', '):'Sample submitted');
   }catch(err){toast('Couldn’t save that sample: '+(err&&err.message?err.message:'unknown error'));}
@@ -910,6 +942,7 @@ return await zip.generateAsync({type:'blob'});}
    a re-import joins by identity. The YYMM_ prefix and the index stay exactly
    where they were, so every older ZIP still matches via the fallbacks. */
 async function exportZip(dateStr){
+  await prefetchMissingFulls(); /* v30: desktop can build the full bundle */
   var zip=new JSZip();var count=0;
   var ym=dateStr.slice(2,4)+dateStr.slice(5,7);
   for(var i=0;i<entries.length;i++){
@@ -921,7 +954,7 @@ async function exportZip(dateStr){
     var ref=e.uid?e.uid+'_':'';
     var types=[{key:'priceFull',suffix:'_price_tag'},{key:'contentFull',suffix:'_content_label'},{key:'garmentFull',suffix:'_garment'},{key:'originFull',suffix:'_origin'}];
     for(var ti=0;ti<types.length;ti++){
-      var t=types[ti];var fullRes=imgs[t.key];
+      var t=types[ti];var fullRes=imgs[t.key]||imgs[t.key.replace('Full','Thumb')]; /* v30: synced thumb beats a missing photo */
       if(!fullRes)continue;
       var b64=fullRes.split(',')[1];
       if(!b64)continue;
@@ -1020,7 +1053,7 @@ function clearAllData(){
   entries=[];imageStore={};
   try{localStorage.removeItem('hc_samples');localStorage.removeItem('hc_last_export');localStorage.removeItem('hc_last_change');}catch(e){}
   dbClear();render();
-  syncDeleteMany(_uids);SYNC.lastMetaWrite='';
+  syncDeleteMany(_uids);_uids.forEach(function(u){deleteStoragePhotos(u);});photoQSave([]);SYNC.lastMetaWrite='';
   toast('Samples cleared — ready for new trip');
 }
 
@@ -1166,7 +1199,7 @@ async function runImport(){
           if(ff){photos[slots[si].k]='data:image/jpeg;base64,'+(await ff.async('base64'));got=true;}
           else wanted++;
         }
-        if(got){var id=await storePhotos(photos);if(id){e.imageId=id;photoCount++;}}
+        if(got){var id=await storePhotos(photos);if(id){e.imageId=id;e.photoRev=1;e.pfr=1;photoCount++;}}
         else unmatched++;
         /* v28: 160 base64 decodes + canvas thumbnails used to look like a freeze. */
         if(n%3===0)go.textContent='Matching photos… '+(n+1)+' of '+newEntries.length;
@@ -1183,6 +1216,7 @@ async function runImport(){
     persist();render();resetImportPickers();
     syncPushMany(newEntries);
     if(replace&&_staleUids.length)syncDeleteMany(_staleUids);
+    newEntries.forEach(function(e){if(e.imageId)enqueuePhotoSync(e.uid,photoSlotsOf(e),[]);});
     var bits=[(replace?'Replaced with ':'Imported ')+newEntries.length+' sample'+(newEntries.length===1?'':'s')];
     if(photoCount)bits.push(photoCount+' with photos');
     if(zipFile&&unmatched)bits.push(unmatched+' with no photos found in the ZIP');
@@ -1202,8 +1236,10 @@ async function runImport(){
 
 /* ===== LIGHTBOX (tap a thumbnail to view full size) ===== */
 var _lb={slots:[],pos:0,sub:''};
-function openLightbox(idx,key){var e=entries[idx];if(!e||!e.imageId)return;var imgs=imageStore[e.imageId];if(!imgs)return;var defs=[{k:'price',l:'Price tag'},{k:'content',l:'Content label'},{k:'garment',l:'Garment'},{k:'origin',l:'Origin'}];var slots=[];defs.forEach(function(d){var src=imgs[d.k+'Full']||imgs[d.k+'Thumb'];if(src)slots.push({src:src,label:d.l,key:d.k});});if(!slots.length)return;var start=0;slots.forEach(function(s,i){if(s.key===key)start=i;});_lb={slots:slots,pos:start,sub:(e.style?e.style+' — ':'')+(e.garment||'Sample')+' × '+(e.qty||1)};renderLightbox();document.getElementById('lightbox').classList.add('open');}
-function renderLightbox(){var s=_lb.slots[_lb.pos];if(!s)return;document.getElementById('lbImg').src=s.src;document.getElementById('lbCap').textContent=s.label+(_lb.slots.length>1?(' · '+(_lb.pos+1)+' of '+_lb.slots.length):'');document.getElementById('lbSub').textContent=_lb.sub;var multi=_lb.slots.length>1;document.getElementById('lbPrev').style.display=multi?'flex':'none';document.getElementById('lbNext').style.display=multi?'flex':'none';}
+function openLightbox(idx,key){var e=entries[idx];if(!e||!e.imageId)return;var imgs=imageStore[e.imageId];if(!imgs)return;var defs=[{k:'price',l:'Price tag'},{k:'content',l:'Content label'},{k:'garment',l:'Garment'},{k:'origin',l:'Origin'}];var slots=[];defs.forEach(function(d){var src=imgs[d.k+'Full']||imgs[d.k+'Thumb'];if(src)slots.push({src:src,label:d.l,key:d.k,hasFull:!!imgs[d.k+'Full']});});if(!slots.length)return;var start=0;slots.forEach(function(s,i){if(s.key===key)start=i;});_lb={slots:slots,pos:start,sub:(e.style?e.style+' — ':'')+(e.garment||'Sample')+' × '+(e.qty||1),uid:e.uid};renderLightbox();document.getElementById('lightbox').classList.add('open');}
+function renderLightbox(){var s=_lb.slots[_lb.pos];if(!s)return;document.getElementById('lbImg').src=s.src;document.getElementById('lbCap').textContent=s.label+(_lb.slots.length>1?(' · '+(_lb.pos+1)+' of '+_lb.slots.length):'');var _cur=_lb.slots[_lb.pos];
+if(_cur&&!_cur.hasFull&&_lb.uid&&syncOn()){document.getElementById('lbSub').textContent=_lb.sub+' · fetching full…';fetchFullPhoto(_lb.uid,_cur.key);}
+else document.getElementById('lbSub').textContent=_lb.sub;var multi=_lb.slots.length>1;document.getElementById('lbPrev').style.display=multi?'flex':'none';document.getElementById('lbNext').style.display=multi?'flex':'none';}
 function lbNav(d){if(!_lb.slots.length)return;_lb.pos=(_lb.pos+d+_lb.slots.length)%_lb.slots.length;renderLightbox();}
 function closeLightbox(){document.getElementById('lightbox').classList.remove('open');document.getElementById('lbImg').src='';}
 /* v28: Escape closes the lightbox, then any open sheet (finding 16). */
@@ -1231,9 +1267,11 @@ window.addEventListener('beforeunload',function(ev){
   ev.preventDefault();ev.returnValue='';
 });
 /* ===== v29: CROSS-DEVICE SYNC — Firebase Auth (email/password) + Firestore =====
-   Phase 1: per-sample metadata sync keyed on the v28 uid. Photos stay on the
-   device that took them (Storage sync is Phase 2). Signed out, the app
-   behaves exactly as v28 — sync is additive and opt-in.
+   Per-sample metadata sync keyed on the v28 uid; v30 adds photo sync —
+   thumbnails inside the sample doc, ~1600px fulls in Firebase Storage (see
+   the PHOTO SYNC block below). Full-resolution originals never leave the
+   capture device. Signed out, the app behaves exactly as v28 — sync is
+   additive and opt-in.
 
    Conflict model: per-sample last-write-wins fenced by a rev counter, NOT a
    whole-doc transaction like RD Expense. Two reasons: per-sample docs mean
@@ -1248,8 +1286,8 @@ window.addEventListener('beforeunload',function(ev){
    device B deletes X; A reconnecting re-creates X. Rare enough to accept
    over tombstone bookkeeping. */
 var FIREBASE_CONFIG={apiKey:"AIzaSyDCsY46_4M_ttOQxiuLNIw7kt75Q4pmCl8",authDomain:"rd-sample-log.firebaseapp.com",projectId:"rd-sample-log",storageBucket:"rd-sample-log.firebasestorage.app",messagingSenderId:"685359156138",appId:"1:685359156138:web:0faf5da6932a99defeb9d3"};
-/* SDK version is pinned in the three <script> tags in <head> (SYNC_SDK below
-   is documentation) — bump all four together, same rule as SCAN_MODEL. */
+/* SDK version is pinned in the four <script> tags in <head> (SYNC_SDK below
+   is documentation) — bump all five together, same rule as SCAN_MODEL. */
 var SYNC_SDK='10.14.1';
 var SYNC={ok:false,user:null,unsub:null,unsubMeta:null,pend:0,deviceId:'',lastMetaWrite:''};
 var _pendingRemote=[];
@@ -1261,18 +1299,160 @@ function metaRef(){return firebase.firestore().collection('users').doc(SYNC.user
    flight. With Firestore persistence on, queued writes survive a reload —
    the pill is information, not a warning to keep the tab open. */
 function track(p){SYNC.pend++;updateStats();p.catch(function(e){}).then(function(){SYNC.pend=Math.max(0,SYNC.pend-1);updateStats();});}
-function syncEntryData(e){return{style:e.style||'',country:e.country||'',qty:e.qty||1,garment:e.garment||'',content:e.content||'',gender:e.gender||'',woven:e.woven||'',cost:e.cost||'',currency:e.currency||'',notes:e.notes||'',scanned:!!e.scanned,at:e.at||Date.now(),rev:e.rev||1,revBy:SYNC.deviceId,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};}
+function syncEntryData(e){var d={style:e.style||'',country:e.country||'',qty:e.qty||1,garment:e.garment||'',content:e.content||'',gender:e.gender||'',woven:e.woven||'',cost:e.cost||'',currency:e.currency||'',notes:e.notes||'',scanned:!!e.scanned,at:e.at||Date.now(),rev:e.rev||1,revBy:SYNC.deviceId,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
+  /* v30: thumbnails ride the doc so previews reach every device through the
+     offline-safe Firestore channel; photoRev fences them like rev fences data */
+  var rec=e.imageId&&imageStore[e.imageId],th={},has=false;
+  if(rec)PHOTO_SLOTS.forEach(function(s){if(rec[s+'Thumb']){th[s]=rec[s+'Thumb'];has=true;}});
+  if(has)d.thumbs=th;
+  d.photoRev=e.photoRev||0;
+  return d;}
 function syncPush(e){if(!syncOn()||!e||!e.uid)return;track(sampCol().doc(e.uid).set(syncEntryData(e)));}
-function syncPushMany(list){if(!syncOn()||!list||!list.length)return;var db=firebase.firestore();for(var i=0;i<list.length;i+=400){(function(chunk){var b=db.batch();chunk.forEach(function(e){if(e.uid)b.set(sampCol().doc(e.uid),syncEntryData(e));});track(b.commit());})(list.slice(i,i+400));}}
+function syncPushMany(list){if(!syncOn()||!list||!list.length)return;var db=firebase.firestore();for(var i=0;i<list.length;i+=50){(function(chunk){var b=db.batch();chunk.forEach(function(e){if(e.uid)b.set(sampCol().doc(e.uid),syncEntryData(e));});track(b.commit());})(list.slice(i,i+50));}}
 function syncDelete(uid){if(!syncOn()||!uid)return;track(sampCol().doc(uid).delete());}
 function syncDeleteMany(uids){if(!syncOn()||!uids||!uids.length)return;var db=firebase.firestore();for(var i=0;i<uids.length;i+=400){(function(chunk){var b=db.batch();chunk.forEach(function(u){b.delete(sampCol().doc(u));});track(b.commit());})(uids.slice(i,i+400));}}
 /* Export state syncs as max-of-timestamps — "latest export/change wins" is
    exactly the semantics the pill needs, and max-merge cannot loop. */
 function syncMeta(){if(!syncOn())return;var le=parseInt(localStorage.getItem('hc_last_export')||'0',10)||0,lc=parseInt(localStorage.getItem('hc_last_change')||'0',10)||0;var key=le+'|'+lc;if(key===SYNC.lastMetaWrite)return;SYNC.lastMetaWrite=key;track(metaRef().set({lastExport:le,lastChange:lc},{merge:true}));}
+/* ===== v30: PHOTO SYNC =====
+   Thumbnails travel INSIDE the Firestore sample doc (doc.thumbs, ~15KB per
+   slot), so previews reach every device through the same offline-safe channel
+   as the metadata — no separate download path, no extra reads. Firebase
+   Storage carries only a ~1600px JPEG per slot at
+   users/{uid}/photos/{sampleUid}/{slot}.jpg, uploaded through a persistent
+   queue (Storage, unlike Firestore, has no offline persistence — a failed
+   upload must survive a reload) and fetched lazily: when the lightbox opens
+   on a thumb-only slot, or before an export on a device that didn't take the
+   photos. Full-resolution originals never leave the capture device.
+
+   Change detection is per-slot by thumbnail string equality: a doc arriving
+   with the same thumb this device already has means that slot didn't change,
+   so a locally-held full (including the original) is kept. photoRev fences
+   photo state exactly as rev fences metadata; pfr ("photos fetched rev") is
+   the local-only high-water mark of what this device has merged. */
+var PHOTO_SLOTS=['price','content','garment','origin'];
+function photoSlotsOf(e){var rec=e&&e.imageId&&imageStore[e.imageId];if(!rec)return[];return PHOTO_SLOTS.filter(function(s){return !!rec[s+'Full'];});}
+function storagePhotoRef(sampleUid,slot){return firebase.storage().ref('users/'+SYNC.user.uid+'/photos/'+sampleUid+'/'+slot+'.jpg');}
+function photoQ(){try{return JSON.parse(localStorage.getItem('hc_photo_queue')||'[]');}catch(e){return[];}}
+function photoQSave(q){try{localStorage.setItem('hc_photo_queue',JSON.stringify(q));}catch(e){}}
+function photoQCount(){return photoQ().length;}
+function enqueuePhotoSync(uid,up,del){
+  up=up||[];del=del||[];
+  var q=photoQ(),j=null;
+  for(var i=0;i<q.length;i++){if(q[i].uid===uid){j=q[i];break;}}
+  if(!j){j={uid:uid,up:[],del:[]};q.push(j);}
+  up.forEach(function(s){if(j.up.indexOf(s)===-1)j.up.push(s);var di=j.del.indexOf(s);if(di>-1)j.del.splice(di,1);});
+  del.forEach(function(s){if(j.del.indexOf(s)===-1)j.del.push(s);var ui=j.up.indexOf(s);if(ui>-1)j.up.splice(ui,1);});
+  photoQSave(q);updateStats();pumpPhotoQueue();
+}
+var _pumpingPhotos=false;
+async function pumpPhotoQueue(){
+  if(_pumpingPhotos)return;
+  if(!syncOn()||navigator.onLine===false)return;
+  _pumpingPhotos=true;
+  try{
+    var q=photoQ();
+    while(q.length){
+      if(!syncOn())break;
+      var j=q[0],e=null;
+      for(var i=0;i<entries.length;i++){if(entries[i].uid===j.uid){e=entries[i];break;}}
+      if(!e){q.shift();photoQSave(q);continue;} /* sample gone — job moot */
+      var rec=(e.imageId&&imageStore[e.imageId])||{};
+      var okAll=true;
+      for(var u=0;u<j.up.length;u++){
+        var s=j.up[u],full=rec[s+'Full'];
+        if(!full)continue; /* nothing local to upload for this slot */
+        var capped=await resizeImage(full,1600);
+        if(capped===null)capped=full; /* undecodable — ship as-is, same rule as thumbs */
+        try{await storagePhotoRef(j.uid,s).putString(capped,'data_url');}
+        catch(err){okAll=false;break;}
+      }
+      if(!okAll)break; /* leave the job queued; retried on reconnect/reload */
+      for(var dd=0;dd<j.del.length;dd++){try{await storagePhotoRef(j.uid,j.del[dd]).delete();}catch(err){/* already gone is fine */}}
+      q.shift();photoQSave(q);updateStats();
+    }
+  }catch(e){}
+  _pumpingPhotos=false;updateStats();
+}
+/* Best-effort cleanup when a sample dies. Offline leaves orphans in Storage —
+   accepted: they cost fractions of a cent and can never be reached by the app. */
+function deleteStoragePhotos(uid){
+  photoQSave(photoQ().filter(function(j){return j.uid!==uid;}));
+  updateStats();
+  if(!syncOn())return;
+  try{firebase.storage().ref('users/'+SYNC.user.uid+'/photos/'+uid).listAll().then(function(res){(res.items||[]).forEach(function(it){it.delete().catch(function(){});});}).catch(function(){});}catch(e){}
+}
+/* Merge a remote doc's photo state into a local entry. Returns true if
+   anything changed. Never persists or renders — the caller owns that. */
+function mergeRemotePhotos(e,doc){
+  var pr=(doc&&doc.photoRev)||0;
+  if(pr<=(e.pfr||0))return false;
+  var th=(doc&&doc.thumbs)||{};
+  var any=false;PHOTO_SLOTS.forEach(function(s){if(th[s])any=true;});
+  if(!any){ /* photos removed remotely */
+    e.pfr=pr;
+    if(!e.imageId)return true;
+    delete imageStore[e.imageId];dbDelete(e.imageId);e.imageId=undefined;
+    return true;
+  }
+  var old=(e.imageId&&imageStore[e.imageId])||{};
+  var rec={},id=e.imageId;
+  PHOTO_SLOTS.forEach(function(s){
+    if(!th[s])return;
+    rec[s+'Thumb']=th[s];
+    /* identical thumb ⇒ slot unchanged ⇒ a locally-held full (possibly the
+       full-res original on the capture device) stays attached */
+    if(old[s+'Thumb']===th[s]&&old[s+'Full'])rec[s+'Full']=old[s+'Full'];
+  });
+  if(!id)id='img_'+Date.now()+'_'+Math.random().toString(36).substr(2,6);
+  imageStore[id]=rec;dbPut(id,rec);
+  e.imageId=id;e.pfr=pr;
+  return true;
+}
+/* Lazy full-resolution fetch: Storage → dataURL → IndexedDB cache. Dedupes
+   in-flight requests; refreshes the open lightbox when its slot arrives. */
+var _fullFetching={};
+function fetchFullPhoto(sampleUid,slot){
+  if(!syncOn())return Promise.resolve(false);
+  var key=sampleUid+'/'+slot;
+  if(_fullFetching[key])return _fullFetching[key];
+  var p=(function(){
+    var e=null;for(var i=0;i<entries.length;i++){if(entries[i].uid===sampleUid){e=entries[i];break;}}
+    if(!e)return Promise.resolve(false);
+    return storagePhotoRef(sampleUid,slot).getDownloadURL()
+      .then(function(url){return fetch(url);})
+      .then(function(r){if(!r||!r.ok)throw new Error('HTTP '+(r&&r.status));return r.blob();})
+      .then(function(b){return new Promise(function(res,rej){var fr=new FileReader();fr.onload=function(){res(fr.result);};fr.onerror=function(){rej(new Error('read failed'));};fr.readAsDataURL(b);});})
+      .then(function(dataUrl){
+        var id=e.imageId,rec=(id&&imageStore[id])||null;
+        if(!rec){id='img_'+Date.now()+'_'+Math.random().toString(36).substr(2,6);rec={};e.imageId=id;}
+        rec[slot+'Full']=dataUrl;imageStore[id]=rec;dbPut(id,rec);persistQuiet();
+        if(_lb&&_lb.uid===sampleUid){_lb.slots.forEach(function(sl){if(sl.key===slot){sl.src=dataUrl;sl.hasFull=true;}});renderLightbox();}
+        return true;
+      });
+  })().catch(function(){return false;}).then(function(ok){delete _fullFetching[key];return ok;});
+  _fullFetching[key]=p;return p;
+}
+/* Before an export on a device missing fulls: pull what Storage has, so the
+   desktop can produce the customs bundle. Anything unreachable falls back to
+   its thumb rather than going missing from the ZIP. */
+async function prefetchMissingFulls(){
+  if(!syncOn()||navigator.onLine===false)return;
+  var jobs=[];
+  entries.forEach(function(e){
+    if(!(e.photoRev>0)||!e.imageId||!imageStore[e.imageId])return;
+    var rec=imageStore[e.imageId];
+    PHOTO_SLOTS.forEach(function(s){if(rec[s+'Thumb']&&!rec[s+'Full'])jobs.push([e.uid,s]);});
+  });
+  if(!jobs.length)return;
+  toast('Fetching '+jobs.length+' synced photo'+(jobs.length===1?'':'s')+' for the export\u2026');
+  for(var i=0;i<jobs.length;i++){try{await fetchFullPhoto(jobs[i][0],jobs[i][1]);}catch(e){}}
+}
+
 /* Whitelist remote fields into the local entry shape. Server-only fields
    (updatedAt, revBy) never land in entries, so localStorage, the worksheet
    and import compatibility are untouched by sync. */
-function cleanRemote(uid,d){d=d||{};return{uid:uid,style:d.style||'',country:d.country||'',qty:d.qty||1,garment:d.garment||'',content:d.content||'',gender:d.gender||'',woven:d.woven||'',cost:d.cost||'',currency:d.currency||'',notes:d.notes||'',scanned:!!d.scanned,rev:d.rev||1,at:d.at||Date.now()};}
+function cleanRemote(uid,d){d=d||{};return{uid:uid,style:d.style||'',country:d.country||'',qty:d.qty||1,garment:d.garment||'',content:d.content||'',gender:d.gender||'',woven:d.woven||'',cost:d.cost||'',currency:d.currency||'',notes:d.notes||'',scanned:!!d.scanned,rev:d.rev||1,at:d.at||Date.now(),photoRev:d.photoRev||0};}
 function modalOpen(){return['choiceOverlay','scanOverlay','manualOverlay'].some(function(id){var el=document.getElementById(id);return el&&el.classList.contains('open');});}
 function applyRemoteOps(ops){
   if(modalOpen()){_pendingRemote=_pendingRemote.concat(ops);return;}
@@ -1283,12 +1463,23 @@ function applyRemoteOps(ops){
       if(idx>=0){var e=entries[idx];if(e.imageId){delete imageStore[e.imageId];dbDelete(e.imageId);}entries.splice(idx,1);changed=true;}
     }else{
       var d=cleanRemote(o.uid,o.data);
-      if(idx<0){entries.push(d);changed=true;}
-      else if((d.rev||0)>(entries[idx].rev||0)){
-        /* imageId is local-only in Phase 1 — a remote update must never
-           detach this device's photos from the sample. */
+      if(idx<0){
+        entries.push(d);
+        mergeRemotePhotos(d,o.data);
+        changed=true;
+      }else if((d.rev||0)>(entries[idx].rev||0)){
+        /* imageId and pfr are local-only — a remote update must never detach
+           this device's photos, and a v29-era doc (photoRev 0) must never
+           erase local photo state. */
         d.imageId=entries[idx].imageId;
-        entries[idx]=d;changed=true;
+        d.pfr=entries[idx].pfr;
+        if((entries[idx].photoRev||0)>(d.photoRev||0))d.photoRev=entries[idx].photoRev;
+        entries[idx]=d;
+        mergeRemotePhotos(d,o.data);
+        changed=true;
+      }else{
+        /* metadata not newer — but the photos might be */
+        if(mergeRemotePhotos(entries[idx],o.data))changed=true;
       }
     }
   });
@@ -1308,11 +1499,26 @@ function startSync(){
     if(first){
       first=false;
       /* First snapshot after sign-in: anything on this device the cloud has
-         never seen gets pushed — the one-time migration of a pre-sync trip. */
-      var cloud={};snap.forEach(function(d){cloud[d.id]=true;});
-      var toPush=entries.filter(function(e){return e.uid&&!cloud[e.uid];});
-      if(toPush.length)syncPushMany(toPush);
+         never seen gets pushed — the one-time migration of a pre-sync trip.
+         v30: entries whose photos the cloud has never seen (photoRev ahead,
+         e.g. samples logged on v29) get pushed and their fulls enqueued. */
+      var cloudPR={};snap.forEach(function(dd){var x=(dd.data?dd.data():null)||{};cloudPR[dd.id]={rev:x.rev||0,photoRev:x.photoRev||0};});
+      var toPush=[];
+      entries.forEach(function(e){
+        if(!e.uid)return;
+        var c=cloudPR[e.uid];
+        if(!c){toPush.push(e);if(e.photoRev)enqueuePhotoSync(e.uid,photoSlotsOf(e),[]);return;}
+        if((e.photoRev||0)>c.photoRev){
+          /* our photos, their doc. Win the rev so the thumbs land; accepted
+             solo-user edge if the cloud metadata was newer (see DECISIONS). */
+          e.rev=Math.max(e.rev||1,c.rev)+1;
+          toPush.push(e);
+          enqueuePhotoSync(e.uid,photoSlotsOf(e),[]);
+        }
+      });
+      if(toPush.length){persistQuiet();syncPushMany(toPush);}
       syncMeta();
+      pumpPhotoQueue();
     }
     if(ops.length)applyRemoteOps(ops);
   },function(err){toast('Sync listener error: '+(err&&err.message?err.message:'unknown')+' — logging on this device is unaffected.');});
@@ -1343,7 +1549,7 @@ function initSync(){
     SYNC.ok=true;
     firebase.auth().onAuthStateChanged(function(u){
       SYNC.user=u||null;SYNC.lastMetaWrite='';
-      if(u)startSync();else stopSyncListeners();
+      if(u){startSync();pumpPhotoQueue();}else stopSyncListeners();
       updateSyncUI();updateStats();
     });
   }catch(e){SYNC.ok=false;}
@@ -1394,7 +1600,7 @@ function syncSignOut(){
   if(!fbAvailable())return;
   firebase.auth().signOut().then(function(){toast('Signed out \u2014 this device keeps its samples; sync paused.');}).catch(function(err){toast('Sign-out failed: '+((err&&err.message)||'unknown'));});
 }
-window.addEventListener('online',function(){updateStats();});
+window.addEventListener('online',function(){updateStats();pumpPhotoQueue();});
 window.addEventListener('offline',function(){updateStats();});
 
 // Initialize: open IndexedDB, load images into memory, then render
@@ -1404,7 +1610,7 @@ window.addEventListener('offline',function(){updateStats();});
   /* v28: backfill uids onto samples logged before this version, quietly, so
      an untouched trip isn't marked "unsaved changes" just for opening v28. */
   var added=false,_b=Date.now();
-  entries.forEach(function(e,i){if(!e.uid){e.uid=newUid();added=true;}if(!e.at){e.at=_b+i;added=true;}});
+  entries.forEach(function(e,i){if(!e.uid){e.uid=newUid();added=true;}if(!e.at){e.at=_b+i;added=true;}if(e.imageId&&imageStore[e.imageId]&&!e.photoRev){e.photoRev=1;added=true;}});
   if(added)persistQuiet();
   render();
   initSync();
@@ -1424,7 +1630,7 @@ window.addEventListener('offline',function(){updateStats();});
       <span style="font-size:15px;font-weight:600">Documentation</span>
       <button onclick="document.getElementById('docsPopup').classList.remove('open')" style="background:var(--bg);border:none;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted)">&times;</button>
     </div>
-    <iframe src="docs.html?v=29" style="flex:1;border:none;width:100%"></iframe>
+    <iframe src="docs.html?v=30" style="flex:1;border:none;width:100%"></iframe>
   </div>
 </div>
 </body>
