@@ -6,6 +6,9 @@
 <title>RD Style Sample Log</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
@@ -159,7 +162,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <body>
 <div class="top-bar">
   <div style="display:flex;justify-content:space-between;align-items:center">
-    <div style="min-width:0;flex:1"><h1>RD Style Sample Log</h1><div class="sub">Customs declaration worksheet</div><div style="font-size:10px;font-family:'JetBrains Mono',monospace;opacity:0.55;margin-top:3px;letter-spacing:0.3px">v28</div></div>
+    <div style="min-width:0;flex:1"><h1>RD Style Sample Log</h1><div class="sub">Customs declaration worksheet</div><div style="font-size:10px;font-family:'JetBrains Mono',monospace;opacity:0.55;margin-top:3px;letter-spacing:0.3px">v29</div></div>
     <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
       <button id="apiPill" class="api-pill disconnected" onclick="onApiPillTap()" aria-label="Anthropic API connection status — tap to re-check"><span class="dot" aria-hidden="true"></span><span id="apiPillLabel">No key</span></button>
       <button onclick="toggleSettings()" aria-label="Settings" title="Settings" style="background:rgba(255,255,255,0.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">&#9881;</button>
@@ -172,6 +175,23 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <label style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;opacity:0.7;display:block;margin-bottom:4px">Anthropic API key (for photo scan)</label>
     <input id="settingsApiKey" type="password" placeholder="sk-ant-api03-..." style="width:100%;padding:10px 12px;border-radius:8px;border:none;font-size:13px;font-family:'JetBrains Mono',monospace;background:rgba(255,255,255,0.9);color:#1A1A18" oninput="onKeyFieldInput(this.value)" onchange="onKeyFieldCommit(this.value)">
     <div style="font-size:11px;opacity:0.6;margin-top:4px">Both saved on this device only</div>
+    <label style="font-size:11px;text-transform:uppercase;letter-spacing:0.5px;opacity:0.7;display:block;margin:14px 0 4px">Cross-device sync</label>
+    <div id="syncUnavail" style="display:none;font-size:11px;opacity:0.7;line-height:1.45">Sync library didn&rsquo;t load &mdash; you were probably offline when this page opened. Logging on this device is unaffected; reconnect and reload to sign in.</div>
+    <div id="syncOut" style="display:none">
+      <input id="syncEmailIn" type="email" autocomplete="username" placeholder="you@rdstyle.com" style="width:100%;padding:10px 12px;border-radius:8px;border:none;font-size:14px;font-family:inherit;background:rgba(255,255,255,0.9);color:#1A1A18;margin-bottom:6px">
+      <input id="syncPassIn" type="password" autocomplete="current-password" placeholder="Password" onkeydown="if(event.key==='Enter')syncSignIn()" style="width:100%;padding:10px 12px;border-radius:8px;border:none;font-size:14px;font-family:inherit;background:rgba(255,255,255,0.9);color:#1A1A18">
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button id="syncSignInBtn" onclick="syncSignIn()" style="flex:1;padding:10px;border-radius:8px;border:none;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;background:rgba(255,255,255,0.9);color:#1D4E3E">Sign in</button>
+        <button onclick="syncForgot()" style="padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;background:rgba(255,255,255,0.1);color:#fff">Forgot password?</button>
+      </div>
+      <div class="settings-note">One account, created in the Firebase console &mdash; same email/password style as RD Expense. Signed out, everything stays on this device exactly as before.</div>
+    </div>
+    <div id="syncIn" style="display:none">
+      <div style="font-size:12px;background:rgba(255,255,255,0.1);border-radius:8px;padding:8px 10px;line-height:1.5">Signed in as <b id="syncWho"></b> <span style="opacity:0.7">&middot; samples sync across signed-in devices</span></div>
+      <div class="settings-note">Photos stay on the device that took them for now &mdash; photo sync arrives in Phase&nbsp;2.</div>
+      <button onclick="syncSignOut()" style="width:100%;margin-top:8px;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;background:rgba(255,255,255,0.1);color:#fff">Sign out (keeps this device&rsquo;s samples)</button>
+    </div>
+    <div id="syncErr" style="display:none;font-size:11px;color:#FFD2D2;background:rgba(226,75,74,0.25);border-radius:8px;padding:8px 10px;margin-top:8px;line-height:1.45"></div>
     <button onclick="document.getElementById('docsPopup').classList.add('open')" style="width:100%;margin-top:12px;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;background:rgba(255,255,255,0.1);color:#fff">View documentation</button>
     <button onclick="confirmClear()" style="width:100%;margin-top:12px;padding:10px;border-radius:8px;border:none;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;background:rgba(226,75,74,0.15);color:#E24B4A">Clear all samples</button>
   </div>
@@ -319,7 +339,7 @@ try{entries=JSON.parse(localStorage.getItem('hc_samples')||'[]');}catch(e){}
 function persistQuiet(){try{localStorage.setItem('hc_samples',JSON.stringify(entries));}catch(e){}}
 /* v28: every mutation stamps a change time, so the app can tell whether what
    is on screen has actually been exported. */
-function persist(){try{localStorage.setItem('hc_samples',JSON.stringify(entries));localStorage.setItem('hc_last_change',Date.now().toString());}catch(e){}}
+function persist(){try{localStorage.setItem('hc_samples',JSON.stringify(entries));localStorage.setItem('hc_last_change',Date.now().toString());}catch(e){}syncMeta();}
 
 /* v28: hc_last_export was written in three places and read in none — the app
    knew whether the trip had left the device and never said so. */
@@ -336,7 +356,7 @@ function exportState(){
 
 var _toastTimer=null;
 function toast(m){m=String(m==null?'':m);var t=document.getElementById('toast');t.textContent=m;var isLong=m.length>60;t.classList.toggle('long',isLong);t.classList.add('show');if(_toastTimer)clearTimeout(_toastTimer);var ms=isLong?Math.min(12000,2500+m.length*45):2000;_toastTimer=setTimeout(function(){t.classList.remove('show')},ms);}
-function closeAll(){['choiceOverlay','scanOverlay','manualOverlay'].forEach(function(id){document.getElementById(id).classList.remove('open');});editIndex=-1;}
+function closeAll(){['choiceOverlay','scanOverlay','manualOverlay'].forEach(function(id){document.getElementById(id).classList.remove('open');});editIndex=-1;flushPendingRemote();}
 
 /* v28: a backdrop tap used to destroy a filled scan form — four photos plus a
    paid API call — with no confirmation. */
@@ -373,6 +393,11 @@ function updateStats(){
   var html='',inc=incompleteCount(),st=exportState();
   if(inc)html+='<div class="stat-pill warn tap" onclick="jumpToIncomplete()" title="Tap to open the first incomplete sample">⚠ Incomplete <span class="num">'+inc+'</span></div>';
   if(!st.none)html+='<div class="stat-pill '+(st.clean?'ok':'warn')+'">'+(st.clean?'✓ ':'↑ ')+esc(st.label)+'</div>';
+  if(typeof SYNC!=='undefined'&&SYNC.user){
+    if(SYNC.pend>0)html+='<div class="stat-pill warn tap" onclick="openSyncSettings()" title="Writes waiting to reach the server \u2014 they survive a reload and send when connected">\u2601 Syncing '+SYNC.pend+'</div>';
+    else if(navigator.onLine===false)html+='<div class="stat-pill warn tap" onclick="openSyncSettings()" title="Offline \u2014 changes queue on this device and sync when you reconnect">\u2601 Offline \u00b7 queued</div>';
+    else html+='<div class="stat-pill ok tap" onclick="openSyncSettings()" title="All changes synced">\u2601 Synced</div>';
+  }
   extra.innerHTML=html;
 }
 function jumpToIncomplete(){
@@ -558,11 +583,14 @@ async function saveEntry(){
       if(!imgId&&oldId){delete imageStore[oldId];dbDelete(oldId);entry.imageId=undefined;}
       entries[editIndex]=Object.assign(entries[editIndex],entry);
       if(!entries[editIndex].uid)entries[editIndex].uid=newUid();
+      entries[editIndex].rev=(entries[editIndex].rev||0)+1;
+      syncPush(entries[editIndex]);
       toast('Sample updated');
     }else{
-      entry.uid=newUid();
+      entry.uid=newUid();entry.rev=1;entry.at=Date.now();
       if(imgId)entry.imageId=imgId;
       entries.push(entry);
+      syncPush(entry);
       var miss=missingFields(entry);
       toast(miss.length?'Sample submitted — still missing '+miss.join(', '):'Sample submitted');
     }
@@ -575,8 +603,8 @@ function editEntry(i){openForm(i);}
 function duplicateEntry(i){
   var c=Object.assign({},entries[i]);
   delete c.imageId;delete c.scanned;
-  c.uid=newUid();
-  entries.push(c);persist();render();
+  c.uid=newUid();c.rev=1;c.at=Date.now();
+  entries.push(c);syncPush(c);persist();render();
   toast('Duplicated — edit the copy');
   openForm(entries.length-1);
 }
@@ -585,7 +613,7 @@ function deleteEntry(i){
   var label=(e.style?e.style+' — ':'')+(e.garment||'sample');
   if(!confirm('Delete #'+(i+1)+' '+label+'?'+(e.imageId?'\n\nIts photos will be deleted too.':'')))return;
   if(e.imageId){delete imageStore[e.imageId];dbDelete(e.imageId);}
-  entries.splice(i,1);persist();render();toast('Sample deleted');
+  entries.splice(i,1);syncDelete(e.uid);persist();render();toast('Sample deleted');
 }
 
 /* ===== SCANNER ===== */
@@ -750,8 +778,8 @@ async function saveScanEntry(){
   try{
     var imgId=await storePhotos(scanPhotos);
     if(imgId)entry.imageId=imgId;
-    entry.uid=newUid();
-    entries.push(entry);persist();closeAll();render();
+    entry.uid=newUid();entry.rev=1;entry.at=Date.now();
+    entries.push(entry);syncPush(entry);persist();closeAll();render();
     var miss=missingFields(entry);
     toast(miss.length?'Sample submitted — still missing '+miss.join(', '):'Sample submitted');
   }catch(err){toast('Couldn’t save that sample: '+(err&&err.message?err.message:'unknown error'));}
@@ -940,7 +968,7 @@ async function downloadOnly(){
       downloadFallback(new File([bBlob],bName,{type:'application/zip'}),bName);
       toast('Saved '+entries.length+' sample'+(entries.length===1?'':'s')+' + photos as one file: '+bName);
     }
-    localStorage.setItem('hc_last_export',Date.now().toString());
+    localStorage.setItem('hc_last_export',Date.now().toString());syncMeta();
     updateStats();
   }catch(err){toast('Export failed: '+(err&&err.message?err.message:'unknown error')+'. Your samples are still saved on this device.');}
   if(btn)btn.disabled=false;
@@ -964,7 +992,7 @@ async function shareFile(){
       try{
         await navigator.share({title:'Sample Log – '+r.dateStr,text:summary,files:files});
         toast('Shared');
-        localStorage.setItem('hc_last_export',Date.now().toString());
+        localStorage.setItem('hc_last_export',Date.now().toString());syncMeta();
         updateStats();
       }catch(err){if(err.name!=='AbortError')await downloadOnly();}
     }else{
@@ -984,12 +1012,15 @@ function confirmClear(){
     : '⚠ '+st.label.toUpperCase()+'\n\nYou have '+entries.length+' sample'+(entries.length===1?'':'s')+
       ' that have not been exported. Clearing deletes them and their photos permanently.\n\n'+
       'Tap Cancel, then Save, if you want a copy first.\n\nClear anyway?';
+  if(syncOn())msg+='\n\n\u2601 Sync is ON \u2014 this also deletes these samples from the cloud and from every device signed into this account.';
   if(confirm(msg)){clearAllData();toggleSettings();}
 }
 function clearAllData(){
+  var _uids=entries.filter(function(e){return e.uid;}).map(function(e){return e.uid;});
   entries=[];imageStore={};
   try{localStorage.removeItem('hc_samples');localStorage.removeItem('hc_last_export');localStorage.removeItem('hc_last_change');}catch(e){}
   dbClear();render();
+  syncDeleteMany(_uids);SYNC.lastMetaWrite='';
   toast('Samples cleared — ready for new trip');
 }
 
@@ -1074,7 +1105,7 @@ async function runImport(){
       /* Skip blank spacer rows and the currency-subtotal rows at the bottom */
       if((country==null||country==='')&&(garment==null||garment==='')&&(style==null||style==='')) continue;
       if(r.join(' ').toLowerCase().indexOf('total:')!==-1) continue;
-      newEntries.push({style:style||'',country:country||'',qty:get(r,'qty')||1,garment:garment||'',content:get(r,'content')||'',gender:get(r,'gender')||'',woven:get(r,'woven')||'',cost:get(r,'cost')||'',currency:get(r,'currency')||'',notes:get(r,'notes')||'',uid:get(r,'uid')||newUid()});
+      newEntries.push({style:style||'',country:country||'',qty:get(r,'qty')||1,garment:garment||'',content:get(r,'content')||'',gender:get(r,'gender')||'',woven:get(r,'woven')||'',cost:get(r,'cost')||'',currency:get(r,'currency')||'',notes:get(r,'notes')||'',uid:get(r,'uid')||newUid(),rev:1,at:Date.now()+i});
     }
     if(!newEntries.length){toast('No sample rows found in that file — only the header and totals.');resetGo();return;}
     /* v28: importing the same file twice used to silently double the trip. */
@@ -1141,13 +1172,17 @@ async function runImport(){
         if(n%3===0)go.textContent='Matching photos… '+(n+1)+' of '+newEntries.length;
       }
     }
+    var _staleUids=[];
     if(replace){
+      _staleUids=entries.filter(function(e){return e.uid&&!newEntries.some(function(n){return n.uid===e.uid;});}).map(function(e){return e.uid;});
       Object.keys(imageStore).forEach(function(k){if(!newEntries.some(function(e){return e.imageId===k;}))dbDelete(k);});
       entries=newEntries;
     }else{
       for(var j=0;j<newEntries.length;j++)entries.push(newEntries[j]);
     }
     persist();render();resetImportPickers();
+    syncPushMany(newEntries);
+    if(replace&&_staleUids.length)syncDeleteMany(_staleUids);
     var bits=[(replace?'Replaced with ':'Imported ')+newEntries.length+' sample'+(newEntries.length===1?'':'s')];
     if(photoCount)bits.push(photoCount+' with photos');
     if(zipFile&&unmatched)bits.push(unmatched+' with no photos found in the ZIP');
@@ -1195,16 +1230,184 @@ window.addEventListener('beforeunload',function(ev){
   if(exportState().clean)return;
   ev.preventDefault();ev.returnValue='';
 });
+/* ===== v29: CROSS-DEVICE SYNC — Firebase Auth (email/password) + Firestore =====
+   Phase 1: per-sample metadata sync keyed on the v28 uid. Photos stay on the
+   device that took them (Storage sync is Phase 2). Signed out, the app
+   behaves exactly as v28 — sync is additive and opt-in.
+
+   Conflict model: per-sample last-write-wins fenced by a rev counter, NOT a
+   whole-doc transaction like RD Expense. Two reasons: per-sample docs mean
+   two devices editing different samples never conflict at all, and Firestore
+   transactions refuse to run offline — offline-first matters more here than
+   the tiny remaining window. Echoes of this device's own writes are dropped
+   via hasPendingWrites; remote ops arriving while a sheet is open queue in
+   _pendingRemote until closeAll(), so an in-flight edit is never clobbered
+   (and editIndex, which is positional, can never be shifted mid-edit).
+
+   Known accepted edge (solo user): device A edits sample X offline while
+   device B deletes X; A reconnecting re-creates X. Rare enough to accept
+   over tombstone bookkeeping. */
+var FIREBASE_CONFIG={apiKey:"AIzaSyDCsY46_4M_ttOQxiuLNIw7kt75Q4pmCl8",authDomain:"rd-sample-log.firebaseapp.com",projectId:"rd-sample-log",storageBucket:"rd-sample-log.firebasestorage.app",messagingSenderId:"685359156138",appId:"1:685359156138:web:0faf5da6932a99defeb9d3"};
+/* SDK version is pinned in the three <script> tags in <head> (SYNC_SDK below
+   is documentation) — bump all four together, same rule as SCAN_MODEL. */
+var SYNC_SDK='10.14.1';
+var SYNC={ok:false,user:null,unsub:null,unsubMeta:null,pend:0,deviceId:'',lastMetaWrite:''};
+var _pendingRemote=[];
+function fbAvailable(){return typeof firebase!=='undefined'&&!!firebase.firestore&&!!firebase.auth;}
+function syncOn(){return SYNC.ok&&!!SYNC.user;}
+function sampCol(){return firebase.firestore().collection('users').doc(SYNC.user.uid).collection('samples');}
+function metaRef(){return firebase.firestore().collection('users').doc(SYNC.user.uid).collection('meta').doc('state');}
+/* Every write is tracked so the stats pill can say how many are still in
+   flight. With Firestore persistence on, queued writes survive a reload —
+   the pill is information, not a warning to keep the tab open. */
+function track(p){SYNC.pend++;updateStats();p.catch(function(e){}).then(function(){SYNC.pend=Math.max(0,SYNC.pend-1);updateStats();});}
+function syncEntryData(e){return{style:e.style||'',country:e.country||'',qty:e.qty||1,garment:e.garment||'',content:e.content||'',gender:e.gender||'',woven:e.woven||'',cost:e.cost||'',currency:e.currency||'',notes:e.notes||'',scanned:!!e.scanned,at:e.at||Date.now(),rev:e.rev||1,revBy:SYNC.deviceId,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};}
+function syncPush(e){if(!syncOn()||!e||!e.uid)return;track(sampCol().doc(e.uid).set(syncEntryData(e)));}
+function syncPushMany(list){if(!syncOn()||!list||!list.length)return;var db=firebase.firestore();for(var i=0;i<list.length;i+=400){(function(chunk){var b=db.batch();chunk.forEach(function(e){if(e.uid)b.set(sampCol().doc(e.uid),syncEntryData(e));});track(b.commit());})(list.slice(i,i+400));}}
+function syncDelete(uid){if(!syncOn()||!uid)return;track(sampCol().doc(uid).delete());}
+function syncDeleteMany(uids){if(!syncOn()||!uids||!uids.length)return;var db=firebase.firestore();for(var i=0;i<uids.length;i+=400){(function(chunk){var b=db.batch();chunk.forEach(function(u){b.delete(sampCol().doc(u));});track(b.commit());})(uids.slice(i,i+400));}}
+/* Export state syncs as max-of-timestamps — "latest export/change wins" is
+   exactly the semantics the pill needs, and max-merge cannot loop. */
+function syncMeta(){if(!syncOn())return;var le=parseInt(localStorage.getItem('hc_last_export')||'0',10)||0,lc=parseInt(localStorage.getItem('hc_last_change')||'0',10)||0;var key=le+'|'+lc;if(key===SYNC.lastMetaWrite)return;SYNC.lastMetaWrite=key;track(metaRef().set({lastExport:le,lastChange:lc},{merge:true}));}
+/* Whitelist remote fields into the local entry shape. Server-only fields
+   (updatedAt, revBy) never land in entries, so localStorage, the worksheet
+   and import compatibility are untouched by sync. */
+function cleanRemote(uid,d){d=d||{};return{uid:uid,style:d.style||'',country:d.country||'',qty:d.qty||1,garment:d.garment||'',content:d.content||'',gender:d.gender||'',woven:d.woven||'',cost:d.cost||'',currency:d.currency||'',notes:d.notes||'',scanned:!!d.scanned,rev:d.rev||1,at:d.at||Date.now()};}
+function modalOpen(){return['choiceOverlay','scanOverlay','manualOverlay'].some(function(id){var el=document.getElementById(id);return el&&el.classList.contains('open');});}
+function applyRemoteOps(ops){
+  if(modalOpen()){_pendingRemote=_pendingRemote.concat(ops);return;}
+  var changed=false;
+  ops.forEach(function(o){
+    var idx=-1;for(var i=0;i<entries.length;i++){if(entries[i].uid===o.uid){idx=i;break;}}
+    if(o.op==='del'){
+      if(idx>=0){var e=entries[idx];if(e.imageId){delete imageStore[e.imageId];dbDelete(e.imageId);}entries.splice(idx,1);changed=true;}
+    }else{
+      var d=cleanRemote(o.uid,o.data);
+      if(idx<0){entries.push(d);changed=true;}
+      else if((d.rev||0)>(entries[idx].rev||0)){
+        /* imageId is local-only in Phase 1 — a remote update must never
+           detach this device's photos from the sample. */
+        d.imageId=entries[idx].imageId;
+        entries[idx]=d;changed=true;
+      }
+    }
+  });
+  if(changed){entries.sort(function(a,b){return(a.at||0)-(b.at||0);});persistQuiet();render();}
+}
+function flushPendingRemote(){if(!_pendingRemote.length)return;var ops=_pendingRemote;_pendingRemote=[];applyRemoteOps(ops);}
+function startSync(){
+  stopSyncListeners();
+  var first=true;
+  SYNC.unsub=sampCol().onSnapshot(function(snap){
+    var ops=[];
+    snap.docChanges().forEach(function(ch){
+      if(ch.doc.metadata&&ch.doc.metadata.hasPendingWrites)return;
+      if(ch.type==='removed')ops.push({op:'del',uid:ch.doc.id});
+      else ops.push({op:'up',uid:ch.doc.id,data:ch.doc.data()});
+    });
+    if(first){
+      first=false;
+      /* First snapshot after sign-in: anything on this device the cloud has
+         never seen gets pushed — the one-time migration of a pre-sync trip. */
+      var cloud={};snap.forEach(function(d){cloud[d.id]=true;});
+      var toPush=entries.filter(function(e){return e.uid&&!cloud[e.uid];});
+      if(toPush.length)syncPushMany(toPush);
+      syncMeta();
+    }
+    if(ops.length)applyRemoteOps(ops);
+  },function(err){toast('Sync listener error: '+(err&&err.message?err.message:'unknown')+' — logging on this device is unaffected.');});
+  SYNC.unsubMeta=metaRef().onSnapshot(function(d){
+    if(d.metadata&&d.metadata.hasPendingWrites)return;
+    var m=(d&&d.data&&d.data())||{};
+    var le=parseInt(localStorage.getItem('hc_last_export')||'0',10)||0;
+    var lc=parseInt(localStorage.getItem('hc_last_change')||'0',10)||0;
+    var ne=Math.max(le,m.lastExport||0),nc=Math.max(lc,m.lastChange||0);
+    var ch=false;
+    if(ne!==le){try{localStorage.setItem('hc_last_export',String(ne));}catch(e){}ch=true;}
+    if(nc!==lc){try{localStorage.setItem('hc_last_change',String(nc));}catch(e){}ch=true;}
+    if(ch)updateStats();
+  });
+}
+function stopSyncListeners(){if(SYNC.unsub){SYNC.unsub();SYNC.unsub=null;}if(SYNC.unsubMeta){SYNC.unsubMeta();SYNC.unsubMeta=null;}SYNC.pend=0;_pendingRemote=[];}
+function initSync(){
+  if(!fbAvailable()){updateSyncUI();return;}
+  try{
+    firebase.initializeApp(FIREBASE_CONFIG);
+    var d=localStorage.getItem('hc_device_id');
+    if(!d){d='d'+Date.now().toString(36)+Math.random().toString(36).substr(2,4);try{localStorage.setItem('hc_device_id',d);}catch(e){}}
+    SYNC.deviceId=d;
+    /* Must run before any other Firestore call. failed-precondition (second
+       tab open) and unimplemented (old browser) both degrade gracefully to
+       online-only sync — never fatal. */
+    try{firebase.firestore().enablePersistence({synchronizeTabs:true}).catch(function(){});}catch(e){}
+    SYNC.ok=true;
+    firebase.auth().onAuthStateChanged(function(u){
+      SYNC.user=u||null;SYNC.lastMetaWrite='';
+      if(u)startSync();else stopSyncListeners();
+      updateSyncUI();updateStats();
+    });
+  }catch(e){SYNC.ok=false;}
+  updateSyncUI();
+}
+function showSyncErr(m){var e=document.getElementById('syncErr');if(!e)return;if(!m){e.style.display='none';e.textContent='';return;}e.textContent=m;e.style.display='block';}
+function updateSyncUI(){
+  var un=document.getElementById('syncUnavail'),out=document.getElementById('syncOut'),inn=document.getElementById('syncIn');
+  if(!un||!out||!inn)return;
+  if(!fbAvailable()){un.style.display='block';out.style.display='none';inn.style.display='none';return;}
+  un.style.display='none';
+  if(SYNC.user){inn.style.display='block';out.style.display='none';var w=document.getElementById('syncWho');if(w)w.textContent=SYNC.user.email||'';showSyncErr('');}
+  else{inn.style.display='none';out.style.display='block';}
+}
+function openSyncSettings(){var p=document.getElementById('settingsPanel');if(p&&(p.style.display==='none'||!p.style.display))p.style.display='block';var f=document.getElementById(SYNC.user?'syncWho':'syncEmailIn');if(f&&f.focus){try{f.focus();}catch(e){}}}
+function syncSignIn(){
+  if(!fbAvailable()){showSyncErr('Sync library didn\u2019t load \u2014 reconnect and reload the page first.');return;}
+  var em=(document.getElementById('syncEmailIn').value||'').trim(),pw=document.getElementById('syncPassIn').value||'';
+  if(!em||!pw){showSyncErr('Enter the email and password of the account created in the Firebase console.');return;}
+  showSyncErr('');
+  var btn=document.getElementById('syncSignInBtn');if(btn){btn.disabled=true;btn.textContent='Signing in\u2026';}
+  firebase.auth().signInWithEmailAndPassword(em,pw).then(function(){
+    if(btn){btn.disabled=false;btn.textContent='Sign in';}
+    var pf=document.getElementById('syncPassIn');if(pf)pf.value='';
+    toast('Signed in \u2014 syncing this device');
+  }).catch(function(err){
+    if(btn){btn.disabled=false;btn.textContent='Sign in';}
+    var c=(err&&err.code)||'',m;
+    if(/invalid-credential|wrong-password|user-not-found|invalid-email/.test(c))m='Email or password doesn\u2019t match the account created in the Firebase console.';
+    else if(/too-many-requests/.test(c))m='Too many attempts \u2014 wait a few minutes, or use Forgot password.';
+    else if(/network-request-failed/.test(c))m='Offline \u2014 signing in needs a connection. Logging samples on this device still works.';
+    else m='Sign-in failed: '+((err&&err.message)||c||'unknown error');
+    showSyncErr(m);
+  });
+}
+function syncForgot(){
+  if(!fbAvailable()){showSyncErr('Sync library didn\u2019t load \u2014 reconnect and reload the page first.');return;}
+  var em=(document.getElementById('syncEmailIn').value||'').trim();
+  if(!em){showSyncErr('Type your account email above first, then tap Forgot password.');return;}
+  firebase.auth().sendPasswordResetEmail(em).then(function(){
+    toast('Password reset email sent to '+em+' \u2014 check spam too.');showSyncErr('');
+  }).catch(function(err){
+    var c=(err&&err.code)||'';
+    showSyncErr(/user-not-found/.test(c)?'No account with that email \u2014 accounts are created in the Firebase console, not here.':'Couldn\u2019t send the reset email: '+((err&&err.message)||c));
+  });
+}
+function syncSignOut(){
+  if(!fbAvailable())return;
+  firebase.auth().signOut().then(function(){toast('Signed out \u2014 this device keeps its samples; sync paused.');}).catch(function(err){toast('Sign-out failed: '+((err&&err.message)||'unknown'));});
+}
+window.addEventListener('online',function(){updateStats();});
+window.addEventListener('offline',function(){updateStats();});
+
 // Initialize: open IndexedDB, load images into memory, then render
 (async function init(){
   try{await openDB();imageStore=await dbGetAll();}catch(e){}
   try{var old=JSON.parse(localStorage.getItem('hc_images')||'{}');var keys=Object.keys(old);if(keys.length){for(var i=0;i<keys.length;i++){if(!imageStore[keys[i]]){imageStore[keys[i]]=old[keys[i]];await dbPut(keys[i],old[keys[i]]);}}localStorage.removeItem('hc_images');}}catch(e){}
   /* v28: backfill uids onto samples logged before this version, quietly, so
      an untouched trip isn't marked "unsaved changes" just for opening v28. */
-  var added=false;
-  entries.forEach(function(e){if(!e.uid){e.uid=newUid();added=true;}});
+  var added=false,_b=Date.now();
+  entries.forEach(function(e,i){if(!e.uid){e.uid=newUid();added=true;}if(!e.at){e.at=_b+i;added=true;}});
   if(added)persistQuiet();
   render();
+  initSync();
   validateApiKey(localStorage.getItem('scan_api_key')||'',false);
   if(typeof XLSX==='undefined'||typeof JSZip==='undefined'){
     setTimeout(function(){
@@ -1221,7 +1424,7 @@ window.addEventListener('beforeunload',function(ev){
       <span style="font-size:15px;font-weight:600">Documentation</span>
       <button onclick="document.getElementById('docsPopup').classList.remove('open')" style="background:var(--bg);border:none;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted)">&times;</button>
     </div>
-    <iframe src="docs.html?v=28" style="flex:1;border:none;width:100%"></iframe>
+    <iframe src="docs.html?v=29" style="flex:1;border:none;width:100%"></iframe>
   </div>
 </div>
 </body>
