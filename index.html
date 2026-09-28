@@ -163,7 +163,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <body>
 <div class="top-bar">
   <div style="display:flex;justify-content:space-between;align-items:center">
-    <div style="min-width:0;flex:1"><h1>RD Style Sample Log</h1><div class="sub">Customs declaration worksheet</div><div style="font-size:10px;font-family:'JetBrains Mono',monospace;opacity:0.55;margin-top:3px;letter-spacing:0.3px">v32</div></div>
+    <div style="min-width:0;flex:1"><h1>RD Style Sample Log</h1><div class="sub">Customs declaration worksheet</div><div style="font-size:10px;font-family:'JetBrains Mono',monospace;opacity:0.55;margin-top:3px;letter-spacing:0.3px">v33</div></div>
     <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
       <button id="apiPill" class="api-pill disconnected" onclick="onApiPillTap()" aria-label="Anthropic API connection status — tap to re-check"><span class="dot" aria-hidden="true"></span><span id="apiPillLabel">No key</span></button>
       <button onclick="toggleSettings()" aria-label="Settings" title="Settings" style="background:rgba(255,255,255,0.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">&#9881;</button>
@@ -189,8 +189,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     </div>
     <div id="syncIn" style="display:none">
       <div style="font-size:12px;background:rgba(255,255,255,0.1);border-radius:8px;padding:8px 10px;line-height:1.5">Signed in as <b id="syncWho"></b> <span style="opacity:0.7">&middot; samples sync across signed-in devices</span></div>
+      <div id="syncDiag" style="font-size:11px;font-family:'JetBrains Mono',monospace;opacity:0.75;line-height:1.6;margin-top:6px"></div>
       <div class="settings-note">Photos sync too: previews travel with each sample; full copies upload in the background and download when you open or export them. The garment photo syncs at full resolution; tag and label photos at 1600px.</div>
-      <button onclick="syncSignOut()" style="width:100%;margin-top:8px;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;background:rgba(255,255,255,0.1);color:#fff">Sign out (keeps this device&rsquo;s samples)</button>
+      <div class="settings-note">Samples are kept per account on this device. Signing into another account shows only that account&rsquo;s samples &mdash; nothing is merged, and nothing here is uploaded to it.</div>
+      <button onclick="syncSignOut()" style="width:100%;margin-top:8px;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;background:rgba(255,255,255,0.1);color:#fff">Sign out (keeps this account&rsquo;s samples on this device)</button>
     </div>
     <div id="syncErr" style="display:none;font-size:11px;color:#FFD2D2;background:rgba(226,75,74,0.25);border-radius:8px;padding:8px 10px;margin-top:8px;line-height:1.45"></div>
     <button onclick="document.getElementById('docsPopup').classList.add('open')" style="width:100%;margin-top:12px;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;background:rgba(255,255,255,0.1);color:#fff">View documentation</button>
@@ -337,17 +339,51 @@ function dbDelete(key){return new Promise(function(resolve){if(!db){resolve();re
 function dbClear(){return new Promise(function(resolve){if(!db){resolve();return;}var tx=db.transaction('images','readwrite');tx.objectStore('images').clear();tx.oncomplete=function(){resolve();};tx.onerror=function(){resolve();};});}
 function dbGetAll(){return new Promise(function(resolve){if(!db){resolve({});return;}var tx=db.transaction('images','readonly');var store=tx.objectStore('images');var result={};var cursor=store.openCursor();cursor.onsuccess=function(e){var c=e.target.result;if(c){result[c.key]=c.value;c.continue();}else{resolve(result);}};cursor.onerror=function(){resolve({});};});}
 
-try{entries=JSON.parse(localStorage.getItem('hc_samples')||'[]');}catch(e){}
-function persistQuiet(){try{localStorage.setItem('hc_samples',JSON.stringify(entries));}catch(e){}}
+/* ===== v33: PER-ACCOUNT LOCAL BUCKETS =====
+   Through v32 one device had ONE local store, shared by every account that
+   signed in: the list you saw was the union of whoever had used the device,
+   and the first-snapshot migration pushed those samples into whichever account
+   signed in next. v33 keys local state by account instead.
+
+     hc_b_<uid>__samples | __last_export | __last_change | __photo_queue | __reup32
+     hc_b_local__*        the signed-out bucket
+
+   BUCKET===null means "not migrated yet" and maps to the v32 key names, so a
+   v32 device renders its samples on the very first paint, before Firebase has
+   told us who is signed in. The migration then runs off the first auth
+   callback (see adoptLegacy) and files them under the right account. Device
+   things — device id, API key, send-to email — stay global and unscoped. */
+var LEGACY_KEYS={samples:'hc_samples',last_export:'hc_last_export',last_change:'hc_last_change',photo_queue:'hc_photo_queue',reup32:'hc_v32_reup'};
+var BUCKET=null,ACTIVE_UID='';
+function bkey(n){return BUCKET?BUCKET+'__'+n:LEGACY_KEYS[n];}
+function lsGet(n){try{return localStorage.getItem(bkey(n));}catch(e){return null;}}
+function lsSet(n,v){try{localStorage.setItem(bkey(n),v);}catch(e){}}
+function lsDel(n){try{localStorage.removeItem(bkey(n));}catch(e){}}
+function bucketFor(uid){return uid?'hc_b_'+uid:'hc_b_local';}
+function bucketSamples(b){try{return JSON.parse(localStorage.getItem(b+'__samples')||'[]');}catch(e){return[];}}
+/* Chosen synchronously at load so the first render is never empty-then-filled:
+   hc_active_uid is written by this app on every auth change, so it is ours,
+   not a Firebase internal we would be guessing at. */
+function bootBucket(){
+  try{
+    if(localStorage.getItem('hc_v33_bucket')==='1'){
+      ACTIVE_UID=localStorage.getItem('hc_active_uid')||'';
+      BUCKET=bucketFor(ACTIVE_UID);
+    }else{BUCKET=null;ACTIVE_UID='';}
+  }catch(e){BUCKET=null;}
+}
+bootBucket();
+try{entries=JSON.parse(lsGet('samples')||'[]');}catch(e){}
+function persistQuiet(){lsSet('samples',JSON.stringify(entries));}
 /* v28: every mutation stamps a change time, so the app can tell whether what
    is on screen has actually been exported. */
-function persist(){try{localStorage.setItem('hc_samples',JSON.stringify(entries));localStorage.setItem('hc_last_change',Date.now().toString());}catch(e){}syncMeta();}
+function persist(){lsSet('samples',JSON.stringify(entries));lsSet('last_change',Date.now().toString());syncMeta();}
 
 /* v28: hc_last_export was written in three places and read in none — the app
    knew whether the trip had left the device and never said so. */
 function exportState(){
-  var ex=parseInt(localStorage.getItem('hc_last_export')||'0',10);
-  var ch=parseInt(localStorage.getItem('hc_last_change')||'0',10);
+  var ex=parseInt(lsGet('last_export')||'0',10);
+  var ch=parseInt(lsGet('last_change')||'0',10);
   if(!entries.length)return{label:'',clean:true,none:true};
   if(!ex)return{label:'Never exported',clean:false};
   if(ch>ex)return{label:'Unsaved changes',clean:false};
@@ -393,6 +429,7 @@ function updateStats(){
   var extra=document.getElementById('statExtra');
   if(!extra)return;
   var html='',inc=incompleteCount(),st=exportState();
+  if(typeof renderSyncDiag==='function')renderSyncDiag();
   if(inc)html+='<div class="stat-pill warn tap" onclick="jumpToIncomplete()" title="Tap to open the first incomplete sample">⚠ Incomplete <span class="num">'+inc+'</span></div>';
   if(!st.none)html+='<div class="stat-pill '+(st.clean?'ok':'warn')+'">'+(st.clean?'✓ ':'↑ ')+esc(st.label)+'</div>';
   if(typeof SYNC!=='undefined'&&SYNC.user){
@@ -1001,7 +1038,7 @@ async function downloadOnly(){
       downloadFallback(new File([bBlob],bName,{type:'application/zip'}),bName);
       toast('Saved '+entries.length+' sample'+(entries.length===1?'':'s')+' + photos as one file: '+bName);
     }
-    localStorage.setItem('hc_last_export',Date.now().toString());syncMeta();
+    lsSet('last_export',Date.now().toString());syncMeta();
     updateStats();
   }catch(err){toast('Export failed: '+(err&&err.message?err.message:'unknown error')+'. Your samples are still saved on this device.');}
   if(btn)btn.disabled=false;
@@ -1025,7 +1062,7 @@ async function shareFile(){
       try{
         await navigator.share({title:'Sample Log – '+r.dateStr,text:summary,files:files});
         toast('Shared');
-        localStorage.setItem('hc_last_export',Date.now().toString());syncMeta();
+        lsSet('last_export',Date.now().toString());syncMeta();
         updateStats();
       }catch(err){if(err.name!=='AbortError')await downloadOnly();}
     }else{
@@ -1050,9 +1087,14 @@ function confirmClear(){
 }
 function clearAllData(){
   var _uids=entries.filter(function(e){return e.uid;}).map(function(e){return e.uid;});
-  entries=[];imageStore={};
-  try{localStorage.removeItem('hc_samples');localStorage.removeItem('hc_last_export');localStorage.removeItem('hc_last_change');}catch(e){}
-  dbClear();render();
+  /* v33: delete only THIS bucket's photo records. dbClear() wiped the whole
+     image store, which under buckets would take another account's photos off
+     the device along with this one's. */
+  var _imgIds=entries.filter(function(e){return e.imageId;}).map(function(e){return e.imageId;});
+  entries=[];
+  _imgIds.forEach(function(k){delete imageStore[k];dbDelete(k);});
+  lsDel('samples');lsDel('last_export');lsDel('last_change');
+  render();
   syncDeleteMany(_uids);_uids.forEach(function(u){deleteStoragePhotos(u);});photoQSave([]);SYNC.lastMetaWrite='';
   toast('Samples cleared — ready for new trip');
 }
@@ -1208,7 +1250,10 @@ async function runImport(){
     var _staleUids=[];
     if(replace){
       _staleUids=entries.filter(function(e){return e.uid&&!newEntries.some(function(n){return n.uid===e.uid;});}).map(function(e){return e.uid;});
-      Object.keys(imageStore).forEach(function(k){if(!newEntries.some(function(e){return e.imageId===k;}))dbDelete(k);});
+      /* v33: only this bucket's photo records are candidates for cleanup.
+         Walking all of imageStore would delete another account's photos off
+         the device — the same defect that was fixed in clearAllData. */
+      entries.forEach(function(e){if(e.imageId&&!newEntries.some(function(n){return n.imageId===e.imageId;})){delete imageStore[e.imageId];dbDelete(e.imageId);}});
       entries=newEntries;
     }else{
       for(var j=0;j<newEntries.length;j++)entries.push(newEntries[j]);
@@ -1289,7 +1334,7 @@ var FIREBASE_CONFIG={apiKey:"AIzaSyDCsY46_4M_ttOQxiuLNIw7kt75Q4pmCl8",authDomain
 /* SDK version is pinned in the four <script> tags in <head> (SYNC_SDK below
    is documentation) — bump all five together, same rule as SCAN_MODEL. */
 var SYNC_SDK='10.14.1';
-var SYNC={ok:false,user:null,unsub:null,unsubMeta:null,pend:0,deviceId:'',lastMetaWrite:''};
+var SYNC={ok:false,user:null,unsub:null,unsubMeta:null,pend:0,deviceId:'',lastMetaWrite:'',cloudCount:null,lastSyncAt:0};
 var _pendingRemote=[];
 function fbAvailable(){return typeof firebase!=='undefined'&&!!firebase.firestore&&!!firebase.auth;}
 function syncOn(){return SYNC.ok&&!!SYNC.user;}
@@ -1313,7 +1358,7 @@ function syncDelete(uid){if(!syncOn()||!uid)return;track(sampCol().doc(uid).dele
 function syncDeleteMany(uids){if(!syncOn()||!uids||!uids.length)return;var db=firebase.firestore();for(var i=0;i<uids.length;i+=400){(function(chunk){var b=db.batch();chunk.forEach(function(u){b.delete(sampCol().doc(u));});track(b.commit());})(uids.slice(i,i+400));}}
 /* Export state syncs as max-of-timestamps — "latest export/change wins" is
    exactly the semantics the pill needs, and max-merge cannot loop. */
-function syncMeta(){if(!syncOn())return;var le=parseInt(localStorage.getItem('hc_last_export')||'0',10)||0,lc=parseInt(localStorage.getItem('hc_last_change')||'0',10)||0;var key=le+'|'+lc;if(key===SYNC.lastMetaWrite)return;SYNC.lastMetaWrite=key;track(metaRef().set({lastExport:le,lastChange:lc},{merge:true}));}
+function syncMeta(){if(!syncOn())return;var le=parseInt(lsGet('last_export')||'0',10)||0,lc=parseInt(lsGet('last_change')||'0',10)||0;var key=le+'|'+lc;if(key===SYNC.lastMetaWrite)return;SYNC.lastMetaWrite=key;track(metaRef().set({lastExport:le,lastChange:lc},{merge:true}));}
 /* ===== v30: PHOTO SYNC =====
    Thumbnails travel INSIDE the Firestore sample doc (doc.thumbs, ~15KB per
    slot), so previews reach every device through the same offline-safe channel
@@ -1339,8 +1384,8 @@ var PHOTO_SLOTS=['price','content','garment','origin'];
 var PHOTO_CAP={price:1600,content:1600,garment:0,origin:1600};
 function photoSlotsOf(e){var rec=e&&e.imageId&&imageStore[e.imageId];if(!rec)return[];return PHOTO_SLOTS.filter(function(s){return !!rec[s+'Full'];});}
 function storagePhotoRef(sampleUid,slot){return firebase.storage().ref('users/'+SYNC.user.uid+'/photos/'+sampleUid+'/'+slot+'.jpg');}
-function photoQ(){try{return JSON.parse(localStorage.getItem('hc_photo_queue')||'[]');}catch(e){return[];}}
-function photoQSave(q){try{localStorage.setItem('hc_photo_queue',JSON.stringify(q));}catch(e){}}
+function photoQ(){try{return JSON.parse(lsGet('photo_queue')||'[]');}catch(e){return[];}}
+function photoQSave(q){lsSet('photo_queue',JSON.stringify(q));}
 function photoQCount(){return photoQ().length;}
 function enqueuePhotoSync(uid,up,del){
   up=up||[];del=del||[];
@@ -1504,10 +1549,15 @@ function startSync(){
       if(ch.type==='removed')ops.push({op:'del',uid:ch.doc.id});
       else ops.push({op:'up',uid:ch.doc.id,data:ch.doc.data()});
     });
+    SYNC.cloudCount=snap.size;SYNC.lastSyncAt=Date.now();
     if(first){
       first=false;
-      /* First snapshot after sign-in: anything on this device the cloud has
-         never seen gets pushed — the one-time migration of a pre-sync trip.
+      /* First snapshot after sign-in: anything in THIS ACCOUNT'S bucket the
+         cloud has never seen gets pushed. Under v33 buckets that is safe by
+         construction — a bucket only ever holds its own account's samples, so
+         this can no longer carry one person's styles into another's trip. It
+         still does its original job: recovering a sample whose queued write
+         was lost rather than merely delayed.
          v30: entries whose photos the cloud has never seen (photoRev ahead,
          e.g. samples logged on v29) get pushed and their fulls enqueued. */
       var cloudPR={};snap.forEach(function(dd){var x=(dd.data?dd.data():null)||{};cloudPR[dd.id]={rev:x.rev||0,photoRev:x.photoRev||0};});
@@ -1525,6 +1575,10 @@ function startSync(){
         }
       });
       if(toPush.length){persistQuiet();syncPushMany(toPush);}
+      /* After the same-account sweep, never before: adopted samples are pushed
+         once by maybeAdoptLocalBucket itself, and running it first made the
+         sweep push the very same docs a second time. */
+      maybeAdoptLocalBucket();
       syncMeta();
       pumpPhotoQueue();
     }
@@ -1533,14 +1587,85 @@ function startSync(){
   SYNC.unsubMeta=metaRef().onSnapshot(function(d){
     if(d.metadata&&d.metadata.hasPendingWrites)return;
     var m=(d&&d.data&&d.data())||{};
-    var le=parseInt(localStorage.getItem('hc_last_export')||'0',10)||0;
-    var lc=parseInt(localStorage.getItem('hc_last_change')||'0',10)||0;
+    var le=parseInt(lsGet('last_export')||'0',10)||0;
+    var lc=parseInt(lsGet('last_change')||'0',10)||0;
     var ne=Math.max(le,m.lastExport||0),nc=Math.max(lc,m.lastChange||0);
     var ch=false;
-    if(ne!==le){try{localStorage.setItem('hc_last_export',String(ne));}catch(e){}ch=true;}
-    if(nc!==lc){try{localStorage.setItem('hc_last_change',String(nc));}catch(e){}ch=true;}
+    if(ne!==le){lsSet('last_export',String(ne));ch=true;}
+    if(nc!==lc){lsSet('last_change',String(nc));ch=true;}
     if(ch)updateStats();
   });
+}
+/* ===== v33: BUCKET BINDING =====
+   adoptLegacy runs once on a device upgrading from v32. The samples already on
+   screen are filed under whoever is signed in at that moment — NOT parked in
+   the signed-out bucket, which would have shown an empty list to a signed-in
+   phone mid-trip: indistinguishable, at a booth, from losing the day's work. */
+function adoptLegacy(u){
+  var target=bucketFor(u?u.uid:'');
+  try{
+    var keys=['samples','last_export','last_change','photo_queue','reup32'];
+    keys.forEach(function(n){
+      var v=null;try{v=localStorage.getItem(LEGACY_KEYS[n]);}catch(e){}
+      if(v!=null){try{localStorage.setItem(target+'__'+n,v);}catch(e){}}
+    });
+    /* flag last: an interrupted migration retries rather than half-applying */
+    localStorage.setItem('hc_v33_bucket','1');
+    localStorage.setItem('hc_active_uid',u?u.uid:'');
+    keys.forEach(function(n){try{localStorage.removeItem(LEGACY_KEYS[n]);}catch(e){}});
+  }catch(e){}
+  BUCKET=target;ACTIVE_UID=u?u.uid:'';
+  /* entries in memory are already this bucket's content — nothing to reload,
+     nothing repaints, the list the user was looking at does not flicker. */
+}
+/* Swap the in-memory list when the signed-in account changes. No merge step
+   exists in this path: the outgoing bucket is written, the incoming one read. */
+function switchBucket(u){
+  /* Signing OUT does not swap the list. The samples on screen belong to the
+     person holding the phone, and emptying their list the moment they sign out
+     — at a booth, mid-trip — would read as data loss. The bucket stays bound to
+     the last account, so anything logged signed out lands in it and pushes on
+     the next sign-in. Only signing into a DIFFERENT account swaps. */
+  if(!u)return;
+  var uid=u.uid,target=bucketFor(uid);
+  if(target===BUCKET){ACTIVE_UID=uid;return;}
+  persistQuiet();
+  BUCKET=target;ACTIVE_UID=uid;
+  try{localStorage.setItem('hc_active_uid',uid);}catch(e){}
+  try{entries=JSON.parse(lsGet('samples')||'[]');}catch(e){entries=[];}
+  if(typeof closeLightbox==='function'){try{closeLightbox();}catch(e){}}
+  render();updateStats();
+}
+/* Offered once per account, and only when this device holds samples logged
+   while signed out. Replaces v32's silent push of every unseen local sample
+   into whichever account had just signed in. */
+function maybeAdoptLocalBucket(){
+  if(!syncOn()||BUCKET==='hc_b_local')return;
+  var uid=SYNC.user.uid,askKey='hc_asked_'+uid;
+  try{if(localStorage.getItem(askKey))return;}catch(e){}
+  var pend=bucketSamples('hc_b_local');
+  if(!pend.length){try{localStorage.setItem(askKey,'1');}catch(e){}return;}
+  var msg='This device has '+pend.length+' sample'+(pend.length===1?'':'s')+
+    ' logged while signed out.\n\nUpload them to '+(SYNC.user.email||'this account')+
+    ', or keep them on this device?\n\nOK = upload to this account\nCancel = keep on this device';
+  var yes=confirm(msg);
+  try{localStorage.setItem(askKey,'1');}catch(e){}
+  if(!yes)return;
+  var mine={};entries.forEach(function(e){if(e.uid)mine[e.uid]=1;});
+  var moved=pend.filter(function(e){return e.uid&&!mine[e.uid];});
+  if(!moved.length)return;
+  moved.forEach(function(e){entries.push(e);});
+  entries.sort(function(a,b){return(a.at||0)-(b.at||0);});
+  persist();render();
+  syncPushMany(moved);
+  moved.forEach(function(e){var sl=photoSlotsOf(e);if(sl.length)enqueuePhotoSync(e.uid,sl,[]);});
+  /* Moved, not copied: leaving them in hc_b_local would resurrect them as a
+     second copy the next time this device is used signed out. */
+  try{
+    var keep=pend.filter(function(e){return!moved.some(function(m){return m.uid===e.uid;});});
+    localStorage.setItem('hc_b_local__samples',JSON.stringify(keep));
+  }catch(e){}
+  toast('Uploaded '+moved.length+' sample'+(moved.length===1?'':'s')+' to this account');
 }
 function stopSyncListeners(){if(SYNC.unsub){SYNC.unsub();SYNC.unsub=null;}if(SYNC.unsubMeta){SYNC.unsubMeta();SYNC.unsubMeta=null;}SYNC.pend=0;_pendingRemote=[];}
 function initSync(){
@@ -1556,7 +1681,10 @@ function initSync(){
     try{firebase.firestore().enablePersistence({synchronizeTabs:true}).catch(function(){});}catch(e){}
     SYNC.ok=true;
     firebase.auth().onAuthStateChanged(function(u){
-      SYNC.user=u||null;SYNC.lastMetaWrite='';
+      SYNC.user=u||null;SYNC.lastMetaWrite='';SYNC.cloudCount=null;SYNC.lastSyncAt=0;
+      /* v33: bind local state to this account BEFORE any listener starts, so a
+         snapshot can never merge into another account's list. */
+      if(BUCKET===null)adoptLegacy(u);else switchBucket(u);
       if(u){startSync();pumpPhotoQueue();}else stopSyncListeners();
       updateSyncUI();updateStats();
     });
@@ -1569,8 +1697,20 @@ function updateSyncUI(){
   if(!un||!out||!inn)return;
   if(!fbAvailable()){un.style.display='block';out.style.display='none';inn.style.display='none';return;}
   un.style.display='none';
-  if(SYNC.user){inn.style.display='block';out.style.display='none';var w=document.getElementById('syncWho');if(w)w.textContent=SYNC.user.email||'';showSyncErr('');}
+  if(SYNC.user){inn.style.display='block';out.style.display='none';var w=document.getElementById('syncWho');if(w)w.textContent=SYNC.user.email||'';showSyncErr('');renderSyncDiag();}
   else{inn.style.display='none';out.style.display='block';}
+}
+/* v33: the September incident took an hour to reason about because none of
+   this was visible. It should be a three-second read. */
+function renderSyncDiag(){
+  var d=document.getElementById('syncDiag');if(!d)return;
+  if(!SYNC.user){d.textContent='';return;}
+  var cloud=(SYNC.cloudCount==null)?'\u2014':SYNC.cloudCount;
+  var pend=SYNC.pend+(typeof photoQCount==='function'?photoQCount():0);
+  var last='never';
+  if(SYNC.lastSyncAt){var m=Math.round((Date.now()-SYNC.lastSyncAt)/60000);last=m<1?'just now':m+'m ago';}
+  d.innerHTML='on this device: <b>'+entries.length+'</b> &middot; in the cloud: <b>'+cloud+'</b><br>'+
+    'waiting to sync: <b>'+pend+'</b> &middot; last sync: <b>'+esc(last)+'</b>';
 }
 function openSyncSettings(){var p=document.getElementById('settingsPanel');if(p&&(p.style.display==='none'||!p.style.display))p.style.display='block';var f=document.getElementById(SYNC.user?'syncWho':'syncEmailIn');if(f&&f.focus){try{f.focus();}catch(e){}}}
 function syncSignIn(){
@@ -1606,7 +1746,7 @@ function syncForgot(){
 }
 function syncSignOut(){
   if(!fbAvailable())return;
-  firebase.auth().signOut().then(function(){toast('Signed out \u2014 this device keeps its samples; sync paused.');}).catch(function(err){toast('Sign-out failed: '+((err&&err.message)||'unknown'));});
+  firebase.auth().signOut().then(function(){toast('Signed out \u2014 this account\u2019s samples stay on this device in its own list, and are not shown to another account. Sync paused.');}).catch(function(err){toast('Sign-out failed: '+((err&&err.message)||'unknown'));});
 }
 window.addEventListener('online',function(){updateStats();pumpPhotoQueue();});
 window.addEventListener('offline',function(){updateStats();});
@@ -1624,9 +1764,9 @@ window.addEventListener('offline',function(){updateStats();});
      Storage at the wrong resolution. Re-queue every slot this device holds an
      original for; the pump applies the per-slot policy. Drains once signed in. */
   try{
-    if(!localStorage.getItem('hc_v32_reup')){
+    if(!lsGet('reup32')){
       entries.forEach(function(e){var sl=photoSlotsOf(e);if(sl.length&&e.photoRev)enqueuePhotoSync(e.uid,sl,[]);});
-      localStorage.setItem('hc_v32_reup','1');
+      lsSet('reup32','1');
     }
   }catch(e){}
   render();
@@ -1647,7 +1787,7 @@ window.addEventListener('offline',function(){updateStats();});
       <span style="font-size:15px;font-weight:600">Documentation</span>
       <button onclick="document.getElementById('docsPopup').classList.remove('open')" style="background:var(--bg);border:none;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted)">&times;</button>
     </div>
-    <iframe src="docs.html?v=32" style="flex:1;border:none;width:100%"></iframe>
+    <iframe src="docs.html?v=33" style="flex:1;border:none;width:100%"></iframe>
   </div>
 </div>
 </body>
