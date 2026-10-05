@@ -163,7 +163,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <body>
 <div class="top-bar">
   <div style="display:flex;justify-content:space-between;align-items:center">
-    <div style="min-width:0;flex:1"><h1>RD Style Sample Log</h1><div class="sub">Customs declaration worksheet</div><div style="font-size:10px;font-family:'JetBrains Mono',monospace;opacity:0.55;margin-top:3px;letter-spacing:0.3px">v33</div></div>
+    <div style="min-width:0;flex:1"><h1>RD Style Sample Log</h1><div class="sub">Customs declaration worksheet</div><div style="font-size:10px;font-family:'JetBrains Mono',monospace;opacity:0.55;margin-top:3px;letter-spacing:0.3px">v34</div></div>
     <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
       <button id="apiPill" class="api-pill disconnected" onclick="onApiPillTap()" aria-label="Anthropic API connection status — tap to re-check"><span class="dot" aria-hidden="true"></span><span id="apiPillLabel">No key</span></button>
       <button onclick="toggleSettings()" aria-label="Settings" title="Settings" style="background:rgba(255,255,255,0.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">&#9881;</button>
@@ -192,7 +192,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <div id="syncDiag" style="font-size:11px;font-family:'JetBrains Mono',monospace;opacity:0.75;line-height:1.6;margin-top:6px"></div>
       <div class="settings-note">Photos sync too: previews travel with each sample; full copies upload in the background and download when you open or export them. The garment photo syncs at full resolution; tag and label photos at 1600px.</div>
       <div class="settings-note">Samples are kept per account on this device. Signing into another account shows only that account&rsquo;s samples &mdash; nothing is merged, and nothing here is uploaded to it.</div>
-      <button onclick="syncSignOut()" style="width:100%;margin-top:8px;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;background:rgba(255,255,255,0.1);color:#fff">Sign out (keeps this account&rsquo;s samples on this device)</button>
+      <button id="syncSignOutBtn" onclick="syncSignOut()" style="width:100%;margin-top:8px;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;background:rgba(255,255,255,0.1);color:#fff">Sign out (keeps this account&rsquo;s samples on this device)</button>
     </div>
     <div id="syncErr" style="display:none;font-size:11px;color:#FFD2D2;background:rgba(226,75,74,0.25);border-radius:8px;padding:8px 10px;margin-top:8px;line-height:1.45"></div>
     <button onclick="document.getElementById('docsPopup').classList.add('open')" style="width:100%;margin-top:12px;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;background:rgba(255,255,255,0.1);color:#fff">View documentation</button>
@@ -1383,6 +1383,7 @@ var PHOTO_SLOTS=['price','content','garment','origin'];
    or buyer actually inspects; tags and labels stay legible at 1600px. */
 var PHOTO_CAP={price:1600,content:1600,garment:0,origin:1600};
 function photoSlotsOf(e){var rec=e&&e.imageId&&imageStore[e.imageId];if(!rec)return[];return PHOTO_SLOTS.filter(function(s){return !!rec[s+'Full'];});}
+function photoRefFor(acct,sampleUid,slot){return firebase.storage().ref('users/'+acct+'/photos/'+sampleUid+'/'+slot+'.jpg');}
 function storagePhotoRef(sampleUid,slot){return firebase.storage().ref('users/'+SYNC.user.uid+'/photos/'+sampleUid+'/'+slot+'.jpg');}
 function photoQ(){try{return JSON.parse(lsGet('photo_queue')||'[]');}catch(e){return[];}}
 function photoQSave(q){lsSet('photo_queue',JSON.stringify(q));}
@@ -1401,10 +1402,14 @@ async function pumpPhotoQueue(){
   if(_pumpingPhotos)return;
   if(!syncOn()||navigator.onLine===false)return;
   _pumpingPhotos=true;
+  /* v34: the pump is bound to the account it started for. Before, an account
+     switch mid-drain carried the old queue into the new bucket (overwriting
+     its pending uploads) and built Storage paths from the new uid. */
+  var b0=BUCKET,u0=SYNC.user.uid;
   try{
     var q=photoQ();
     while(q.length){
-      if(!syncOn())break;
+      if(!syncOn()||BUCKET!==b0||SYNC.user.uid!==u0)break;
       var j=q[0],e=null;
       for(var i=0;i<entries.length;i++){if(entries[i].uid===j.uid){e=entries[i];break;}}
       if(!e){q.shift();photoQSave(q);continue;} /* sample gone — job moot */
@@ -1417,15 +1422,19 @@ async function pumpPhotoQueue(){
            cap at PHOTO_CAP[s]. An undecodable photo ships as-is (thumb rule). */
         var payload=full;
         if(PHOTO_CAP[s]){var capped=await resizeImage(full,PHOTO_CAP[s]);if(capped!==null)payload=capped;}
-        try{await storagePhotoRef(j.uid,s).putString(payload,'data_url');}
+        if(BUCKET!==b0){okAll=false;break;}
+        try{await photoRefFor(u0,j.uid,s).putString(payload,'data_url');}
         catch(err){okAll=false;break;}
       }
-      if(!okAll)break; /* leave the job queued; retried on reconnect/reload */
-      for(var dd=0;dd<j.del.length;dd++){try{await storagePhotoRef(j.uid,j.del[dd]).delete();}catch(err){/* already gone is fine */}}
+      if(!okAll||BUCKET!==b0)break; /* leave the job queued; retried on reconnect/reload */
+      for(var dd=0;dd<j.del.length;dd++){try{await photoRefFor(u0,j.uid,j.del[dd]).delete();}catch(err){/* already gone is fine */}}
+      if(BUCKET!==b0)break;
       q.shift();photoQSave(q);updateStats();
     }
   }catch(e){}
   _pumpingPhotos=false;updateStats();
+  /* the account changed while we were draining — start the new account's queue */
+  if(BUCKET!==b0&&syncOn())pumpPhotoQueue();
 }
 /* Best-effort cleanup when a sample dies. Offline leaves orphans in Storage —
    accepted: they cost fractions of a cent and can never be reached by the app. */
@@ -1744,9 +1753,42 @@ function syncForgot(){
     showSyncErr(/user-not-found/.test(c)?'No account with that email \u2014 accounts are created in the Firebase console, not here.':'Couldn\u2019t send the reset email: '+((err&&err.message)||c));
   });
 }
-function syncSignOut(){
-  if(!fbAvailable())return;
-  firebase.auth().signOut().then(function(){toast('Signed out \u2014 this account\u2019s samples stay on this device in its own list, and are not shown to another account. Sync paused.');}).catch(function(err){toast('Sign-out failed: '+((err&&err.message)||'unknown'));});
+/* v34: signing out with work still in flight used to be silent. Nothing is
+   lost (Firestore keeps the writes, the photo queue stays in this account's
+   bucket, both resume on the next sign-in HERE), but until then the cloud and
+   every other device are missing it. Check, and say so before signing out.
+   waitForPendingWrites also catches writes queued in an earlier page load,
+   which SYNC.pend (this page only) cannot see. Offline it never resolves, so
+   it is raced against a short timeout and a timeout counts as unsynced. */
+function pendingWritesSettled(ms){
+  if(!syncOn()||navigator.onLine===false)return Promise.resolve(false);
+  var w;try{w=firebase.firestore().waitForPendingWrites().then(function(){return true;});}catch(e){return Promise.resolve(false);}
+  return Promise.race([w,new Promise(function(r){setTimeout(function(){r(false);},ms);})]).catch(function(){return false;});
+}
+var _signingOut=false;
+async function syncSignOut(){
+  if(!fbAvailable()||_signingOut)return;
+  _signingOut=true;
+  var btn=document.getElementById('syncSignOutBtn'),lbl=btn?btn.textContent:'';
+  if(btn){btn.disabled=true;btn.textContent='Checking sync\u2026';}
+  try{
+    var settled=await pendingWritesSettled(2500);
+    var photos=photoQCount(),writes=SYNC.pend,offline=navigator.onLine===false;
+    if(!settled||photos||writes){
+      var parts=[];
+      if(writes)parts.push(writes+' sample change'+(writes===1?'':'s'));
+      else if(!settled)parts.push('sample changes');
+      if(photos)parts.push(photos+' photo upload'+(photos===1?'':'s'));
+      var msg='\u26A0 Sync is not complete'+(offline?' \u2014 this device is offline':'')+'.\n\n'+
+        parts.join(' and ')+' from this account have not reached the cloud yet.\n\n'+
+        'If you sign out now they stay safely on this device, but they will only finish uploading the next time THIS account signs in on THIS device. Other devices will not see them until then.\n\n'+
+        'Cancel = stay signed in and let it finish (recommended)\nOK = sign out anyway';
+      if(!confirm(msg)){toast('Still signed in \u2014 check Settings until \u201Cwaiting to sync\u201D reads 0.');return;}
+    }
+    await firebase.auth().signOut();
+    toast('Signed out \u2014 this account\u2019s samples stay on this device in its own list, and are not shown to another account. Sync paused.');
+  }catch(err){toast('Sign-out failed: '+((err&&err.message)||'unknown'));}
+  finally{_signingOut=false;if(btn){btn.disabled=false;btn.textContent=lbl;}}
 }
 window.addEventListener('online',function(){updateStats();pumpPhotoQueue();});
 window.addEventListener('offline',function(){updateStats();});
@@ -1787,7 +1829,7 @@ window.addEventListener('offline',function(){updateStats();});
       <span style="font-size:15px;font-weight:600">Documentation</span>
       <button onclick="document.getElementById('docsPopup').classList.remove('open')" style="background:var(--bg);border:none;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted)">&times;</button>
     </div>
-    <iframe src="docs.html?v=33" style="flex:1;border:none;width:100%"></iframe>
+    <iframe src="docs.html?v=34" style="flex:1;border:none;width:100%"></iframe>
   </div>
 </div>
 </body>
