@@ -163,7 +163,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <body>
 <div class="top-bar">
   <div style="display:flex;justify-content:space-between;align-items:center">
-    <div style="min-width:0;flex:1"><h1>RD Style Sample Log</h1><div class="sub">Customs declaration worksheet</div><div style="font-size:10px;font-family:'JetBrains Mono',monospace;opacity:0.55;margin-top:3px;letter-spacing:0.3px">v34</div></div>
+    <div style="min-width:0;flex:1"><h1>RD Style Sample Log</h1><div class="sub">Customs declaration worksheet</div><div style="font-size:10px;font-family:'JetBrains Mono',monospace;opacity:0.55;margin-top:3px;letter-spacing:0.3px">v35</div></div>
     <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
       <button id="apiPill" class="api-pill disconnected" onclick="onApiPillTap()" aria-label="Anthropic API connection status — tap to re-check"><span class="dot" aria-hidden="true"></span><span id="apiPillLabel">No key</span></button>
       <button onclick="toggleSettings()" aria-label="Settings" title="Settings" style="background:rgba(255,255,255,0.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">&#9881;</button>
@@ -204,7 +204,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <div class="entries-list" id="entriesList"></div>
 <div class="fab-group">
   <button class="fab fab-export" onclick="shareFile()" id="btnShare" style="display:none">&uarr; Share</button>
-  <button class="fab fab-export" onclick="downloadOnly()" id="btnSave">&darr; Save</button>
+  <button class="fab fab-export" onclick="openSaveChoice()" id="btnSave">&darr; Save</button>
   <button class="fab fab-add" onclick="openChoice()">+ Add sample</button>
 </div>
 
@@ -215,6 +215,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="choice-grid">
       <div class="choice-card" onclick="closeAll();openScanner()"><div class="ch-icon">&#128247;</div><div class="ch-title">Scan photos</div><div class="ch-sub">Take photos of tags &amp; garment, auto-fill</div></div>
       <div class="choice-card" onclick="closeAll();openForm()"><div class="ch-icon">&#9998;</div><div class="ch-title">Enter manually</div><div class="ch-sub">Type in sample details yourself</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- v35: SAVE CHOICE MODAL -->
+<div class="modal-overlay" id="saveOverlay" onclick="if(event.target===this)closeAll()">
+  <div class="modal" style="padding-bottom:24px"><div class="modal-handle"></div>
+    <div class="modal-header"><h2>Save export</h2><button class="modal-close" onclick="closeAll()" aria-label="Close">&times;</button></div>
+    <div class="choice-grid">
+      <div class="choice-card" onclick="closeAll();downloadOnly()"><div class="ch-icon">&#128230;</div><div class="ch-title">Excel + photos</div><div class="ch-sub">Full bundle: worksheet and photo ZIP in one file</div></div>
+      <div class="choice-card" onclick="closeAll();downloadExcelOnly()"><div class="ch-icon">&#128202;</div><div class="ch-title">Excel only</div><div class="ch-sub">Just the worksheet &mdash; small and fast, no photos</div></div>
     </div>
   </div>
 </div>
@@ -394,7 +405,7 @@ function exportState(){
 
 var _toastTimer=null;
 function toast(m){m=String(m==null?'':m);var t=document.getElementById('toast');t.textContent=m;var isLong=m.length>60;t.classList.toggle('long',isLong);t.classList.add('show');if(_toastTimer)clearTimeout(_toastTimer);var ms=isLong?Math.min(12000,2500+m.length*45):2000;_toastTimer=setTimeout(function(){t.classList.remove('show')},ms);}
-function closeAll(){['choiceOverlay','scanOverlay','manualOverlay'].forEach(function(id){document.getElementById(id).classList.remove('open');});editIndex=-1;flushPendingRemote();}
+function closeAll(){['choiceOverlay','saveOverlay','scanOverlay','manualOverlay'].forEach(function(id){document.getElementById(id).classList.remove('open');});editIndex=-1;flushPendingRemote();}
 
 /* v28: a backdrop tap used to destroy a filled scan form — four photos plus a
    paid API call — with no confirmation. */
@@ -416,6 +427,8 @@ function requestClose(which){
   closeAll();
 }
 function openChoice(){closeAll();document.getElementById('choiceOverlay').classList.add('open');}
+/* v35: Save offers the full bundle or the worksheet on its own. */
+function openSaveChoice(){if(!entries.length){toast('No samples to save');return;}closeAll();document.getElementById('saveOverlay').classList.add('open');}
 
 function updateStats(){
   var qty=0,byCurr={};
@@ -1044,6 +1057,25 @@ async function downloadOnly(){
   if(btn)btn.disabled=false;
 }
 
+/* v35: worksheet only — skips the photo prefetch and ZIP build entirely, so it
+   is quick on a slow connection and works on a desktop that has no fulls cached. */
+async function downloadExcelOnly(){
+  if(!entries.length){toast('No samples to save');return;}
+  if(!libsReady())return;
+  if(!incompleteGate())return;
+  var btn=document.getElementById('btnSave');
+  if(btn)btn.disabled=true;
+  try{
+    toast('Building worksheet…');
+    var r=await buildFile();
+    downloadFallback(r.file,r.filename);
+    toast('Saved '+entries.length+' sample'+(entries.length===1?'':'s')+' as '+r.filename+' (no photos)');
+    lsSet('last_export',Date.now().toString());syncMeta();
+    updateStats();
+  }catch(err){toast('Export failed: '+(err&&err.message?err.message:'unknown error')+'. Your samples are still saved on this device.');}
+  if(btn)btn.disabled=false;
+}
+
 async function shareFile(){
   if(!entries.length){toast('No samples to share');return;}
   if(!libsReady())return;
@@ -1301,6 +1333,7 @@ document.addEventListener('keydown',function(ev){
   if(document.getElementById('scanOverlay').classList.contains('open')){requestClose('scan');return;}
   if(document.getElementById('manualOverlay').classList.contains('open')){requestClose('manual');return;}
   if(document.getElementById('choiceOverlay').classList.contains('open')){closeAll();return;}
+  if(document.getElementById('saveOverlay').classList.contains('open')){closeAll();return;}
   var dp=document.getElementById('docsPopup');
   if(dp&&dp.classList.contains('open'))dp.classList.remove('open');
 });
@@ -1829,7 +1862,7 @@ window.addEventListener('offline',function(){updateStats();});
       <span style="font-size:15px;font-weight:600">Documentation</span>
       <button onclick="document.getElementById('docsPopup').classList.remove('open')" style="background:var(--bg);border:none;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted)">&times;</button>
     </div>
-    <iframe src="docs.html?v=34" style="flex:1;border:none;width:100%"></iframe>
+    <iframe src="docs.html?v=35" style="flex:1;border:none;width:100%"></iframe>
   </div>
 </div>
 </body>
