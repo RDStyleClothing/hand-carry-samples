@@ -158,14 +158,58 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .btn-dupe{background:var(--blue-light);color:#185FA5}
 .entry-actions button{min-height:36px}
 .settings-note{font-size:11px;opacity:0.6;margin-top:4px;line-height:1.45}
+/* v38: trips + My work */
+.back-btn{background:rgba(255,255,255,0.15);border:none;color:#fff;border-radius:16px;padding:5px 11px 5px 8px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;margin-bottom:8px}
+.tm-btn{background:rgba(255,255,255,0.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.hw-who{font-size:12px;color:var(--muted);padding:12px 16px 0;line-height:1.5}
+.hw-who b{color:var(--text)}
+.hw-tabs{display:flex;gap:6px;padding:12px 16px 4px}
+.hw-tab{flex:1;padding:10px;border-radius:20px;border:1px solid var(--border);background:var(--card);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;color:var(--muted)}
+.hw-tab.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.hw-tab .n{font-family:'JetBrains Mono',monospace;margin-left:4px}
+.hw-list{padding:10px 16px}
+.trip-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;box-shadow:var(--shadow);cursor:pointer}
+.trip-card:active{transform:scale(0.99)}
+.trip-card .tc-type{font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:var(--accent-mid)}
+.trip-card .tc-name{font-weight:600;font-size:16px;margin:3px 0 6px}
+.trip-card .tc-counts{font-size:13px;color:var(--muted)}
+.trip-card .tc-counts b{font-family:'JetBrains Mono',monospace;color:var(--text);font-weight:500}
+.tc-attn{display:inline-block;font-size:11px;font-weight:600;padding:3px 8px;border-radius:12px;margin-top:8px}
+.tc-attn.warn{background:#FBE3C4;color:#7A4405}.tc-attn.ok{background:#E1F5EE;color:#0F6E56}.tc-attn.info{background:var(--blue-light);color:#185FA5}
+.trip-banner{margin:0 16px 10px;padding:10px 12px;border-radius:8px;font-size:12px;line-height:1.5}
+.trip-banner.info{background:var(--blue-light);color:#185FA5}
+.trip-banner.done{background:#EDEBE4;color:#5C5A52}
+.entry-card.selectable{cursor:pointer;padding-left:46px}
+.entry-card .sel-chk{position:absolute;left:14px;top:14px;width:22px;height:22px;border-radius:6px;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;background:var(--card)}
+.entry-card.sel{border-color:var(--accent);background:var(--accent-light)}
+.entry-card.sel .sel-chk{background:var(--accent);border-color:var(--accent)}
+.ts-body{padding:0 20px}
+.ts-body p{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:12px}
+.ts-warn{background:var(--amber-light);color:#7A4405;border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.55;margin-bottom:12px}
+.ts-danger{background:var(--danger-light);color:#A12B2A;border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.55;margin-bottom:12px}
+.ts-body input{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--radius);font-size:15px;font-family:inherit;margin-bottom:12px}
+.ts-body input:focus{outline:none;border-color:var(--accent)}
+.ts-btn{width:100%;padding:13px;border:none;border-radius:var(--radius);font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;margin-top:8px}
+.ts-btn.pri{background:var(--accent);color:#fff}.ts-btn.ghost{background:var(--bg);color:var(--text)}
+.ts-btn.red{background:var(--danger);color:#fff}.ts-btn.redlite{background:var(--danger-light);color:var(--danger)}
+.ts-btn:disabled{opacity:0.4;cursor:not-allowed}
+.ts-item{width:100%;text-align:left;padding:14px 4px;border:none;border-bottom:1px solid var(--border);background:none;font-size:15px;font-family:inherit;cursor:pointer;color:var(--text)}
+.ts-item small{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.ts-item.red{color:var(--danger)}
+.ts-pick{display:flex;justify-content:space-between;align-items:center;padding:13px 12px;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;cursor:pointer;font-size:14px}
+.ts-pick:hover{border-color:var(--accent);background:var(--accent-light)}
+.ts-pick small{color:var(--muted)}
+.sel-bar{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);padding:12px 16px 18px;display:flex;gap:10px;z-index:95}
+.sel-bar .ts-btn{margin:0}
 </style>
 </head>
 <body>
 <div class="top-bar">
   <div style="display:flex;justify-content:space-between;align-items:center">
-    <div style="min-width:0;flex:1"><h1>RD Style Sample Log</h1><div class="sub">Customs declaration worksheet</div><div style="font-size:10px;font-family:'JetBrains Mono',monospace;opacity:0.55;margin-top:3px;letter-spacing:0.3px">v35</div></div>
+    <div style="min-width:0;flex:1"><button id="backBtn" class="back-btn" onclick="goHome()" style="display:none">&#8249; My work</button><h1 id="appTitle">RD Style Sample Log</h1><div class="sub" id="appSub">Customs declaration worksheet</div><div style="font-size:10px;font-family:'JetBrains Mono',monospace;opacity:0.55;margin-top:3px;letter-spacing:0.3px">v38</div></div>
     <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
       <button id="apiPill" class="api-pill disconnected" onclick="onApiPillTap()" aria-label="Anthropic API connection status — tap to re-check"><span class="dot" aria-hidden="true"></span><span id="apiPillLabel">No key</span></button>
+      <button id="tripMenuBtn" class="tm-btn" onclick="tripMenu()" aria-label="Trip menu" title="Trip menu" style="display:none">&#8943;</button>
       <button onclick="toggleSettings()" aria-label="Settings" title="Settings" style="background:rgba(255,255,255,0.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">&#9881;</button>
     </div>
   </div>
@@ -196,16 +240,28 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     </div>
     <div id="syncErr" style="display:none;font-size:11px;color:#FFD2D2;background:rgba(226,75,74,0.25);border-radius:8px;padding:8px 10px;margin-top:8px;line-height:1.45"></div>
     <button onclick="document.getElementById('docsPopup').classList.add('open')" style="width:100%;margin-top:12px;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;background:rgba(255,255,255,0.1);color:#fff">View documentation</button>
-    <button onclick="confirmClear()" style="width:100%;margin-top:12px;padding:10px;border-radius:8px;border:none;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;background:rgba(226,75,74,0.15);color:#E24B4A">Clear all samples</button>
   </div>
 </div>
+<div id="homeView" style="display:none"></div>
+<div id="tripView">
 <div class="stats-row"><div class="stat-pill">Samples <span class="num" id="statLines">0</span></div><div class="stat-pill">Total qty <span class="num" id="statQty">0</span></div><div class="stat-pill">Value <span class="num" id="statValue">&mdash;</span></div><span id="statExtra" style="display:contents"></span></div>
-<div class="import-section"><button class="import-btn" id="importToggle" onclick="toggleImport()">&uarr; Import <span id="importChevron" style="opacity:0.55;font-size:11px">&#9662;</span></button><div class="import-panel" id="importPanel"><div class="import-title">Import to continue editing</div><div class="import-pick" id="pickXlsx" onclick="document.getElementById('fileInputXlsx').click()"><div class="ip-label">Excel file <span class="ip-req">Required</span></div><div class="ip-name" id="nameXlsx">Tap to choose .xlsx</div></div><input type="file" id="fileInputXlsx" accept=".xlsx,.xls" style="display:none" onchange="stageImport('xlsx',event)"><div class="import-pick" id="pickZip" onclick="document.getElementById('fileInputZip').click()"><div class="ip-label">Image ZIP folder <span class="ip-opt">Optional</span></div><div class="ip-name" id="nameZip">Tap to choose .zip</div></div><input type="file" id="fileInputZip" accept=".zip,application/zip" style="display:none" onchange="stageImport('zip',event)"><button class="import-go" id="importGo" disabled onclick="runImport()">&uarr; Start import</button><div class="import-note">Only the Excel file is required. Add the image ZIP to restore photos onto the samples.</div></div></div>
+<div id="tripBanner"></div>
+<div class="import-section" id="importSection"><button class="import-btn" id="importToggle" onclick="toggleImport()">&uarr; Import <span id="importChevron" style="opacity:0.55;font-size:11px">&#9662;</span></button><div class="import-panel" id="importPanel"><div class="import-title">Import to continue editing</div><div class="import-pick" id="pickXlsx" onclick="document.getElementById('fileInputXlsx').click()"><div class="ip-label">Excel file <span class="ip-req">Required</span></div><div class="ip-name" id="nameXlsx">Tap to choose .xlsx</div></div><input type="file" id="fileInputXlsx" accept=".xlsx,.xls" style="display:none" onchange="stageImport('xlsx',event)"><div class="import-pick" id="pickZip" onclick="document.getElementById('fileInputZip').click()"><div class="ip-label">Image ZIP folder <span class="ip-opt">Optional</span></div><div class="ip-name" id="nameZip">Tap to choose .zip</div></div><input type="file" id="fileInputZip" accept=".zip,application/zip" style="display:none" onchange="stageImport('zip',event)"><button class="import-go" id="importGo" disabled onclick="runImport()">&uarr; Start import</button><div class="import-note">Only the Excel file is required. Add the image ZIP to restore photos onto the samples.</div></div></div>
 <div class="entries-list" id="entriesList"></div>
-<div class="fab-group">
+<div class="fab-group" id="tripFabs">
+  <button class="fab fab-export" onclick="reopenTrip()" id="btnReopen" style="display:none">Reopen</button>
   <button class="fab fab-export" onclick="shareFile()" id="btnShare" style="display:none">&uarr; Share</button>
   <button class="fab fab-export" onclick="openSaveChoice()" id="btnSave">&darr; Save</button>
-  <button class="fab fab-add" onclick="openChoice()">+ Add sample</button>
+  <button class="fab fab-add" onclick="openChoice()" id="btnAdd">+ Add sample</button>
+</div>
+<div class="sel-bar" id="selBar" style="display:none"><button class="ts-btn ghost" onclick="endSelect()">Cancel</button><button class="ts-btn pri" id="selGo" onclick="moveTarget()">Move 0 to&hellip;</button></div>
+</div>
+<!-- v38: generic trip sheet (new / rename / menu / move / complete / delete) -->
+<div class="modal-overlay" id="tripSheetOverlay" onclick="if(event.target===this)closeTripSheet()">
+  <div class="modal" style="padding-bottom:24px"><div class="modal-handle"></div>
+    <div class="modal-header"><h2 id="tripSheetTitle"></h2><button class="modal-close" onclick="closeTripSheet()" aria-label="Close">&times;</button></div>
+    <div class="ts-body" id="tripSheetBody"></div>
+  </div>
 </div>
 
 <!-- CHOICE MODAL -->
@@ -327,7 +383,7 @@ function missingFields(e){return REQUIRED.filter(function(f){
   if(v==null||String(v).trim()==='')return true;
   if(f[0]==='cost'&&!(parseFloat(v)>0))return true;
   return false;}).map(function(f){return f[1];});}
-function incompleteCount(){return entries.filter(function(e){return missingFields(e).length;}).length;}
+function incompleteCount(tid){return tripEntries(tid).filter(function(e){return missingFields(e).length;}).length;}
 
 /* v28: the export libraries load from a CDN at page open. Behind a captive
    portal XLSX was simply undefined and Save did nothing at all — no toast,
@@ -364,7 +420,7 @@ function dbGetAll(){return new Promise(function(resolve){if(!db){resolve({});ret
    told us who is signed in. The migration then runs off the first auth
    callback (see adoptLegacy) and files them under the right account. Device
    things — device id, API key, send-to email — stay global and unscoped. */
-var LEGACY_KEYS={samples:'hc_samples',last_export:'hc_last_export',last_change:'hc_last_change',photo_queue:'hc_photo_queue',reup32:'hc_v32_reup'};
+var LEGACY_KEYS={samples:'hc_samples',last_export:'hc_last_export',last_change:'hc_last_change',photo_queue:'hc_photo_queue',reup32:'hc_v32_reup',trips:'hc_trips',last_trip:'hc_last_trip'};
 var BUCKET=null,ACTIVE_UID='';
 function bkey(n){return BUCKET?BUCKET+'__'+n:LEGACY_KEYS[n];}
 function lsGet(n){try{return localStorage.getItem(bkey(n));}catch(e){return null;}}
@@ -388,14 +444,17 @@ try{entries=JSON.parse(lsGet('samples')||'[]');}catch(e){}
 function persistQuiet(){lsSet('samples',JSON.stringify(entries));}
 /* v28: every mutation stamps a change time, so the app can tell whether what
    is on screen has actually been exported. */
-function persist(){lsSet('samples',JSON.stringify(entries));lsSet('last_change',Date.now().toString());syncMeta();}
+function persist(){lsSet('samples',JSON.stringify(entries));lsSet('last_change',Date.now().toString());syncMeta();if(typeof stampTrip==='function'&&CUR_TRIP)stampTrip(CUR_TRIP);}
 
 /* v28: hc_last_export was written in three places and read in none — the app
    knew whether the trip had left the device and never said so. */
-function exportState(){
-  var ex=parseInt(lsGet('last_export')||'0',10);
-  var ch=parseInt(lsGet('last_change')||'0',10);
-  if(!entries.length)return{label:'',clean:true,none:true};
+function exportState(tid){
+  /* v38: per trip. The bucket-wide last_export/last_change keys are still
+     written for v35-v37 devices, but the pill reads the trip's own stamps. */
+  var t=getTrip(tid||CUR_TRIP);
+  var ex=t?(t.lastExportAt||0):0;
+  var ch=t?(t.lastChangeAt||0):0;
+  if(!tripEntries(tid).length)return{label:'',clean:true,none:true};
   if(!ex)return{label:'Never exported',clean:false};
   if(ch>ex)return{label:'Unsaved changes',clean:false};
   var mins=Math.round((Date.now()-ex)/60000);
@@ -428,9 +487,11 @@ function requestClose(which){
 }
 function openChoice(){closeAll();document.getElementById('choiceOverlay').classList.add('open');}
 /* v35: Save offers the full bundle or the worksheet on its own. */
-function openSaveChoice(){if(!entries.length){toast('No samples to save');return;}closeAll();document.getElementById('saveOverlay').classList.add('open');}
+function openSaveChoice(){if(!tripEntries().length){toast('No samples to save');return;}closeAll();document.getElementById('saveOverlay').classList.add('open');}
 
 function updateStats(){
+  if(VIEW==='home'){if(typeof renderSyncDiag==='function')renderSyncDiag();renderHome();return;}
+  var entries=tripEntries();
   var qty=0,byCurr={};
   entries.forEach(function(e){qty+=(parseInt(e.qty)||0);var c=e.currency||'?';byCurr[c]=(byCurr[c]||0)+(parseFloat(e.qty)||0)*(parseFloat(e.cost)||0);});
   document.getElementById('statLines').textContent=entries.length;
@@ -455,20 +516,28 @@ function updateStats(){
   extra.innerHTML=html;
 }
 function jumpToIncomplete(){
-  for(var i=0;i<entries.length;i++){if(missingFields(entries[i]).length){openForm(i);return;}}
+  var _t=getTrip(CUR_TRIP);if(_t&&_t.status==='completed'){toast('This trip is completed — Reopen it to edit samples');return;}
+  for(var i=0;i<entries.length;i++){if(tripOf(entries[i])===CUR_TRIP&&missingFields(entries[i]).length){openForm(i);return;}}
 }
 
 function render(){
+  ensureTrips();
+  if(VIEW==='trip'&&!getTrip(CUR_TRIP)){VIEW='home';CUR_TRIP=null;}
+  applyView();
+  if(VIEW==='home'){renderHome();return;}
   updateStats();
+  var trip=getTrip(CUR_TRIP),done=trip.status==='completed';
   var list=document.getElementById('entriesList');
-  if(!entries.length){list.innerHTML='<div class="empty-state"><div class="icon">📋</div><p>No samples logged yet.<br>Tap <strong>+ Add sample</strong> to start.</p></div>';return;}
-  list.innerHTML=entries.map(function(e,i){
+  var idxs=[];entries.forEach(function(e,i){if(tripOf(e)===CUR_TRIP)idxs.push(i);});
+  renderTripChrome(trip,idxs.length);
+  if(!idxs.length){list.innerHTML='<div class="empty-state"><div class="icon">📋</div><p>'+(done?'This trip has no samples.':'No samples in this trip yet.<br>Tap <strong>+ Add sample</strong> to start.')+'</p></div>';return;}
+  list.innerHTML=idxs.map(function(i,pos){var e=entries[i];
     var total=((parseFloat(e.qty)||0)*(parseFloat(e.cost)||0));
     var sc=e.scanned?'<span class="tag tag-scanned">Scanned</span>':'';
     var hasImg=e.imageId&&imageStore[e.imageId];
     var pt=hasImg?'<span class="tag tag-photos">Photos</span>':'';
     var miss=missingFields(e);
-    var incTag=miss.length?'<span class="tag tag-miss" onclick="editEntry('+i+')" title="Missing: '+esc(miss.join(', '))+'">⚠ '+miss.length+' missing</span>':'';
+    var incTag=miss.length?'<span class="tag tag-miss" onclick="'+((done||SELECT)?'':'editEntry('+i+')')+'" title="Missing: '+esc(miss.join(', '))+'">⚠ '+miss.length+' missing</span>':'';
     var thumbs='';
     if(hasImg){
       var imgs=imageStore[e.imageId];
@@ -479,17 +548,18 @@ function render(){
       thumbs+='</div>';
     }
     var noteRow=e.notes?'<div class="entry-note">'+esc(e.notes)+'</div>':'';
-    return '<div class="entry-card'+(miss.length?' incomplete':'')+'"><span class="row-num">#'+(i+1)+'</span>'+
+    var selOn=SELECT&&SEL[e.uid];
+    return '<div class="entry-card'+(miss.length?' incomplete':'')+(SELECT?' selectable':'')+(selOn?' sel':'')+'"'+(SELECT?' onclick="toggleSel(\''+esc(e.uid)+'\')"':'')+'>'+(SELECT?'<span class="sel-chk">'+(selOn?'&#10003;':'')+'</span>':'')+'<span class="row-num">#'+(pos+1)+'</span>'+
       '<div class="primary">'+(e.style?esc(e.style)+' — ':'')+esc(e.garment||'Unknown')+' × '+esc(e.qty||1)+'</div>'+
       '<div class="secondary">'+esc(e.content||'—')+'</div>'+
       '<div class="tag-row">'+(e.country?'<span class="tag tag-country">'+esc(e.country)+'</span>':'')+
       (e.gender?'<span class="tag tag-gender">'+esc(e.gender)+'</span>':'')+
       (e.woven?'<span class="tag tag-type">'+esc(e.woven)+'</span>':'')+sc+pt+
       '<span class="tag tag-cost">'+esc(fmtMoney(total,e.currency))+'</span>'+incTag+'</div>'+
-      noteRow+thumbs+
-      '<div class="entry-actions"><button class="btn-edit" onclick="editEntry('+i+')">Edit</button>'+
+      noteRow+(SELECT?'':thumbs)+
+      ((done||SELECT)?'':'<div class="entry-actions"><button class="btn-edit" onclick="editEntry('+i+')">Edit</button>'+
       '<button class="btn-dupe" onclick="duplicateEntry('+i+')">Duplicate</button>'+
-      '<button class="btn-delete" onclick="deleteEntry('+i+')">Delete</button></div></div>';
+      '<button class="btn-delete" onclick="deleteEntry('+i+','+(pos+1)+')">Delete</button></div>')+'</div>';
   }).join('');
 }
 
@@ -557,7 +627,7 @@ function openForm(idx){
   }else{
     ['fStyle','fCountry','fGarment','fContent','fGender','fWoven','fCost','fCurrency','fNotes'].forEach(function(id){document.getElementById(id).value='';});
     document.getElementById('fQty').value=1;
-    if(entries.length){var last=entries[entries.length-1];document.getElementById('fCountry').value=last.country||'';document.getElementById('fCurrency').value=last.currency||'';}
+    var _te=tripEntries();if(_te.length){var last=_te[_te.length-1];document.getElementById('fCountry').value=last.country||'';document.getElementById('fCurrency').value=last.currency||'';}
   }
   document.getElementById('manualOverlay').classList.add('open');
 }
@@ -666,7 +736,7 @@ async function saveEntry(){
       toast('Sample updated');
     }else{
       var imgId=await storePhotos(manualPhotos);
-      entry.uid=newUid();entry.rev=1;entry.at=Date.now();
+      entry.uid=newUid();entry.rev=1;entry.at=Date.now();entry.trip=CUR_TRIP;
       if(imgId){entry.imageId=imgId;entry.photoRev=1;entry.pfr=1;}
       entries.push(entry);
       syncPush(entry);
@@ -683,15 +753,15 @@ function editEntry(i){openForm(i);}
 function duplicateEntry(i){
   var c=Object.assign({},entries[i]);
   delete c.imageId;delete c.scanned;
-  c.uid=newUid();c.rev=1;c.at=Date.now();
+  c.uid=newUid();c.rev=1;c.at=Date.now();c.trip=tripOf(entries[i]);
   entries.push(c);syncPush(c);persist();render();
   toast('Duplicated — edit the copy');
   openForm(entries.length-1);
 }
-function deleteEntry(i){
+function deleteEntry(i,pos){
   var e=entries[i];
   var label=(e.style?e.style+' — ':'')+(e.garment||'sample');
-  if(!confirm('Delete #'+(i+1)+' '+label+'?'+(e.imageId?'\n\nIts photos will be deleted too.':'')))return;
+  if(!confirm('Delete #'+(pos||i+1)+' '+label+'?'+(e.imageId?'\n\nIts photos will be deleted too.':'')))return;
   if(e.imageId){delete imageStore[e.imageId];dbDelete(e.imageId);}
   entries.splice(i,1);syncDelete(e.uid);deleteStoragePhotos(e.uid);persist();render();toast('Sample deleted');
 }
@@ -704,7 +774,7 @@ function openScanner(){
   document.getElementById('sfQty').value=1;
   /* v28: the manual form carried country and currency forward and the scanner
      — the path meant to be faster — blanked them. Same trip, same vendor. */
-  if(entries.length){var last=entries[entries.length-1];document.getElementById('sfCountry').value=last.country||'';document.getElementById('sfCurrency').value=last.currency||'';}
+  var _te=tripEntries();if(_te.length){var last=_te[_te.length-1];document.getElementById('sfCountry').value=last.country||'';document.getElementById('sfCurrency').value=last.currency||'';}
   document.getElementById('scanError').classList.remove('show');
   document.getElementById('scanBtn').textContent='Scan & auto-fill';
   var k=localStorage.getItem('scan_api_key')||'';
@@ -766,7 +836,24 @@ var SCAN_MODEL='claude-sonnet-4-6';
    share a prefix and sort together. The YYMM_ prefix on photos INSIDE
    the zip is separate and load-bearing for import - do not change it. */
 var EXPORT_BASE='Sample_Log';
-function exportName(dateStr,suffix,ext){return EXPORT_BASE+'_'+dateStr+(suffix?'_'+suffix:'')+'.'+ext;}
+/* v37: worksheet Content reads fibre first, e.g. "100% Cotton" -> "Cotton 100%".
+   Export-only: the stored sample keeps whatever was scanned or typed. Text with
+   no percentages ("Not visible in images") passes through unchanged, and an
+   already-flipped value is left alone, so the transform is safe to repeat. */
+function fmtContent(s){
+  if(!s)return s||'';
+  return String(s).replace(/(^|[,;:(\/]\s*|\s+and\s+)(\d{1,3}(?:[.,]\d+)?)\s*(%?)\s*([A-Za-zÀ-ɏ][A-Za-zÀ-ɏ'’\- ]*?)(?=\s*(?:[,;()\/]|\band\b|\d|$))/g,
+    function(m,pre,num,pct,fib){
+      if(!pct&&parseFloat(num)>100)return m;
+      fib=fib.trim();if(!fib)return m;
+      return pre+fib.charAt(0).toUpperCase()+fib.slice(1)+' '+num+'%';
+    });
+}
+/* v36: sample count follows the date, e.g. Sample_Log_2026-10-09_100.xlsx */
+/* v38: the trip name sits after the base, so each trip's files are self-describing:
+   Sample_Log_<Trip>_YYYY-MM-DD_N[_Photos|_Bundle]. In-ZIP photo names are unchanged. */
+function tripSlug(t){return String((t&&t.name)||'Trip').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40)||'Trip';}
+function exportName(dateStr,suffix,ext){var entries=tripEntries();return EXPORT_BASE+'_'+tripSlug(getTrip(CUR_TRIP))+'_'+dateStr+'_'+entries.length+(suffix?'_'+suffix:'')+'.'+ext;}
 var _lastApiError='';
 
 async function runScan(){
@@ -857,7 +944,7 @@ async function saveScanEntry(){
   if(!entry.garment){toast('Please select a garment type');return;}
   try{
     var imgId=await storePhotos(scanPhotos);
-    entry.uid=newUid();entry.rev=1;entry.at=Date.now();
+    entry.uid=newUid();entry.rev=1;entry.at=Date.now();entry.trip=CUR_TRIP;
     if(imgId){entry.imageId=imgId;entry.photoRev=1;entry.pfr=1;}
     entries.push(entry);syncPush(entry);
     if(imgId)enqueuePhotoSync(entry.uid,photoSlotsOf(entry),[]);
@@ -871,6 +958,7 @@ async function saveScanEntry(){
 function fileBuf(f){return f.arrayBuffer?f.arrayBuffer():new Promise(function(res,rej){var r=new FileReader();r.onload=function(){res(r.result);};r.onerror=function(){rej(r.error);};r.readAsArrayBuffer(f);});}
 
 async function buildFile(){
+  var entries=tripEntries(); /* v38: one trip per export */
   var cf=function(c){var s=sym(c);return s?'"'+s+'"#,##0.00':'#,##0.00';};
   var wb=XLSX.utils.book_new();
   /* v28: Notes and Ref added. Ref carries the stable sample id so the photo
@@ -882,7 +970,7 @@ async function buildFile(){
     var qty=parseFloat(e.qty)||0,cost=parseFloat(e.cost)||0,curr=e.currency||'Other';
     if(!totals[curr])totals[curr]=0;
     totals[curr]+=qty*cost;
-    data.push([e.style||'',e.country,qty,e.garment,e.content,'',e.gender,e.woven,cost,qty*cost,e.currency,e.notes||'',e.uid||'']);
+    data.push([e.style||'',e.country,qty,e.garment,fmtContent(e.content),'',e.gender,e.woven,cost,qty*cost,e.currency,e.notes||'',e.uid||'']);
   });
   data.push([]);
   var currencies=Object.keys(totals);
@@ -992,6 +1080,7 @@ return await zip.generateAsync({type:'blob'});}
    a re-import joins by identity. The YYMM_ prefix and the index stay exactly
    where they were, so every older ZIP still matches via the fallbacks. */
 async function exportZip(dateStr){
+  var entries=tripEntries();
   await prefetchMissingFulls(); /* v30: desktop can build the full bundle */
   var zip=new JSZip();var count=0;
   var ym=dateStr.slice(2,4)+dateStr.slice(5,7);
@@ -1019,6 +1108,7 @@ async function exportZip(dateStr){
 
 /* v28: warn once about incomplete rows before an export leaves the device. */
 function incompleteGate(){
+  var entries=tripEntries();
   var inc=incompleteCount();
   if(!inc)return true;
   return confirm(inc+' of '+entries.length+' sample'+(entries.length===1?'':'s')+
@@ -1030,6 +1120,7 @@ function incompleteGate(){
    so the photo ZIP never arrived while the toast still said "File saved".
    One gesture, one file: bundle them when Web Share isn't available. */
 async function downloadOnly(){
+  var entries=tripEntries();
   if(!entries.length){toast('No samples to save');return;}
   if(!libsReady())return;
   if(!incompleteGate())return;
@@ -1051,7 +1142,7 @@ async function downloadOnly(){
       downloadFallback(new File([bBlob],bName,{type:'application/zip'}),bName);
       toast('Saved '+entries.length+' sample'+(entries.length===1?'':'s')+' + photos as one file: '+bName);
     }
-    lsSet('last_export',Date.now().toString());syncMeta();
+    markExported();
     updateStats();
   }catch(err){toast('Export failed: '+(err&&err.message?err.message:'unknown error')+'. Your samples are still saved on this device.');}
   if(btn)btn.disabled=false;
@@ -1060,6 +1151,7 @@ async function downloadOnly(){
 /* v35: worksheet only — skips the photo prefetch and ZIP build entirely, so it
    is quick on a slow connection and works on a desktop that has no fulls cached. */
 async function downloadExcelOnly(){
+  var entries=tripEntries();
   if(!entries.length){toast('No samples to save');return;}
   if(!libsReady())return;
   if(!incompleteGate())return;
@@ -1070,13 +1162,14 @@ async function downloadExcelOnly(){
     var r=await buildFile();
     downloadFallback(r.file,r.filename);
     toast('Saved '+entries.length+' sample'+(entries.length===1?'':'s')+' as '+r.filename+' (no photos)');
-    lsSet('last_export',Date.now().toString());syncMeta();
+    markExported();
     updateStats();
   }catch(err){toast('Export failed: '+(err&&err.message?err.message:'unknown error')+'. Your samples are still saved on this device.');}
   if(btn)btn.disabled=false;
 }
 
 async function shareFile(){
+  var entries=tripEntries();
   if(!entries.length){toast('No samples to share');return;}
   if(!libsReady())return;
   if(!incompleteGate())return;
@@ -1085,7 +1178,7 @@ async function shareFile(){
     var tq=entries.reduce(function(s,e){return s+(parseInt(e.qty)||0);},0);
     var parts=Object.keys(r.totals).map(function(c){return fmtMoney(r.totals[c],c);});
     var inc=incompleteCount();
-    var summary='Sample Log – '+r.dateStr+'\n'+entries.length+' items, '+tq+' pcs\n'+parts.join(' | ')+
+    var summary='Sample Log – '+(getTrip(CUR_TRIP)||{}).name+' – '+r.dateStr+'\n'+entries.length+' items, '+tq+' pcs\n'+parts.join(' | ')+
       (inc?'\n⚠ '+inc+' row(s) incomplete — shaded amber in the sheet':'');
     var files=[r.file];
     var zipFile=await exportZip(r.dateStr);
@@ -1094,7 +1187,7 @@ async function shareFile(){
       try{
         await navigator.share({title:'Sample Log – '+r.dateStr,text:summary,files:files});
         toast('Shared');
-        lsSet('last_export',Date.now().toString());syncMeta();
+        markExported();
         updateStats();
       }catch(err){if(err.name!=='AbortError')await downloadOnly();}
     }else{
@@ -1216,14 +1309,16 @@ async function runImport(){
     }
     if(!newEntries.length){toast('No sample rows found in that file — only the header and totals.');resetGo();return;}
     /* v28: importing the same file twice used to silently double the trip. */
-    var replace=false;
-    if(entries.length){
+    var replace=false,_tl=tripEntries(),_tn=(getTrip(CUR_TRIP)||{}).name||'this trip';
+    if(_tl.length){
       replace=!confirm('Add these '+newEntries.length+' sample'+(newEntries.length===1?'':'s')+
-        ' to the '+entries.length+' already in the app?\n\nOK to add · Cancel to REPLACE everything with the imported file.');
-      if(replace&&!confirm('Replace all '+entries.length+' existing sample'+(entries.length===1?'':'s')+' and their photos?\n\nThis cannot be undone.')){resetGo();return;}
+        ' to the '+_tl.length+' already in '+_tn+'?\n\nOK to add · Cancel to REPLACE this trip\u2019s samples with the imported file.');
+      if(replace&&!confirm('Replace all '+_tl.length+' sample'+(_tl.length===1?'':'s')+' in '+_tn+' and their photos?\n\nOther trips are not touched. This cannot be undone.')){resetGo();return;}
     }
+    newEntries.forEach(function(e){e.trip=CUR_TRIP;});
+    /* v38: a uid already in ANY trip of this account is never imported twice */
     var existingUids={};
-    if(!replace)entries.forEach(function(e){if(e.uid)existingUids[e.uid]=true;});
+    entries.forEach(function(e){if(e.uid&&!(replace&&tripOf(e)===CUR_TRIP))existingUids[e.uid]=true;});
     var skipped=0;
     newEntries=newEntries.filter(function(e){if(existingUids[e.uid]){skipped++;return false;}return true;});
     if(!newEntries.length){toast('Every row in that file is already in the app — nothing to add.');resetGo();return;}
@@ -1281,12 +1376,12 @@ async function runImport(){
     }
     var _staleUids=[];
     if(replace){
-      _staleUids=entries.filter(function(e){return e.uid&&!newEntries.some(function(n){return n.uid===e.uid;});}).map(function(e){return e.uid;});
+      _staleUids=_tl.filter(function(e){return e.uid&&!newEntries.some(function(n){return n.uid===e.uid;});}).map(function(e){return e.uid;});
       /* v33: only this bucket's photo records are candidates for cleanup.
          Walking all of imageStore would delete another account's photos off
          the device — the same defect that was fixed in clearAllData. */
-      entries.forEach(function(e){if(e.imageId&&!newEntries.some(function(n){return n.imageId===e.imageId;})){delete imageStore[e.imageId];dbDelete(e.imageId);}});
-      entries=newEntries;
+      _tl.forEach(function(e){if(e.imageId&&!newEntries.some(function(n){return n.imageId===e.imageId;})){delete imageStore[e.imageId];dbDelete(e.imageId);}});
+      entries=entries.filter(function(e){return tripOf(e)!==CUR_TRIP;}).concat(newEntries);
     }else{
       for(var j=0;j<newEntries.length;j++)entries.push(newEntries[j]);
     }
@@ -1334,6 +1429,8 @@ document.addEventListener('keydown',function(ev){
   if(document.getElementById('manualOverlay').classList.contains('open')){requestClose('manual');return;}
   if(document.getElementById('choiceOverlay').classList.contains('open')){closeAll();return;}
   if(document.getElementById('saveOverlay').classList.contains('open')){closeAll();return;}
+  if(document.getElementById('tripSheetOverlay').classList.contains('open')){closeTripSheet();return;}
+  if(SELECT){endSelect();return;}
   var dp=document.getElementById('docsPopup');
   if(dp&&dp.classList.contains('open'))dp.classList.remove('open');
 });
@@ -1341,9 +1438,295 @@ document.addEventListener('keydown',function(ev){
 /* v28: warn before a reload/close takes an unexported trip with it. */
 window.addEventListener('beforeunload',function(ev){
   if(!entries.length)return;
-  if(exportState().clean)return;
+  if(TRIPS.every(function(t){return t.status==='completed'||exportState(t.id).clean;}))return;
   ev.preventDefault();ev.returnValue='';
 });
+/* ===== v38: TRIPS + MY WORK =====
+   Every sample belongs to one trip (e.tripId in Firestore, e.trip locally). A
+   sample with no trip — everything logged before v38, and anything an older
+   build pushes — belongs to t_default, "Samples before trips". That routing is
+   computed, never written, so upgrading changes nothing on disk or in the cloud
+   and every device arrives at the same answer.
+
+   Trips are per account (bucket key __trips) and sync as
+   users/{uid}/trips/{tripId}: { type:'sample', name, status, createdAt,
+   completedAt, lastExportAt, lastChangeAt, rev, revBy }.
+   name/status/completedAt are last-write-wins fenced by rev, exactly like
+   samples. lastExportAt/lastChangeAt are max-merged, so two devices logging
+   into the same trip never fight over them. t_default starts at rev 0 and is
+   not written to the cloud until someone renames, completes or reopens it.
+
+   Several trips can be open at once. Which trip is on screen is per device
+   (bucket key __last_trip). Nothing is deleted except by Delete trip. */
+var TRIPS=[],VIEW='home',CUR_TRIP=null,HOME_TAB='open',SELECT=false,SEL={};
+var DEFAULT_TRIP='t_default',DEFAULT_TRIP_NAME='Samples before trips';
+function tripOf(e){return(e&&e.trip)||DEFAULT_TRIP;}
+function tripEntries(tid){tid=tid||CUR_TRIP;return entries.filter(function(e){return tripOf(e)===tid;});}
+function getTrip(id){for(var i=0;i<TRIPS.length;i++)if(TRIPS[i].id===id)return TRIPS[i];return null;}
+function newTripId(){return 't'+Date.now().toString(36)+Math.random().toString(36).substr(2,4);}
+function saveTrips(){lsSet('trips',JSON.stringify(TRIPS));}
+function loadTrips(){try{TRIPS=JSON.parse(lsGet('trips')||'[]');}catch(e){TRIPS=[];}ensureTrips();}
+/* Make sure every trip a sample points at exists. The first time a device opens
+   v38 that creates t_default and carries the old bucket-wide export stamps over,
+   so the status line doesn't suddenly read "Never exported". A trip id arriving
+   on a synced sample before its trip doc gets a placeholder; the doc replaces it
+   (rev 0 always loses). */
+function ensureTrips(){
+  var seen={},changed=false;
+  entries.forEach(function(e){seen[tripOf(e)]=1;});
+  Object.keys(seen).forEach(function(id){
+    if(getTrip(id))return;
+    var t={id:id,type:'sample',name:id===DEFAULT_TRIP?DEFAULT_TRIP_NAME:'Untitled trip',status:'open',createdAt:Date.now(),completedAt:0,lastExportAt:0,lastChangeAt:0,rev:0,ph:id!==DEFAULT_TRIP};
+    if(id===DEFAULT_TRIP){t.lastExportAt=parseInt(lsGet('last_export')||'0',10)||0;t.lastChangeAt=parseInt(lsGet('last_change')||'0',10)||0;var at=entries.reduce(function(m,e){return Math.min(m,e.at||m);},Date.now());t.createdAt=at;}
+    TRIPS.push(t);changed=true;
+  });
+  if(changed)saveTrips();
+}
+function tripRefDoc(id){return firebase.firestore().collection('users').doc(SYNC.user.uid).collection('trips').doc(id);}
+function tripDocData(t){return{type:'sample',name:t.name||'',status:t.status||'open',createdAt:t.createdAt||0,completedAt:t.completedAt||0,lastExportAt:t.lastExportAt||0,lastChangeAt:t.lastChangeAt||0,rev:t.rev||0,revBy:SYNC.deviceId};}
+function pushTrip(t){if(!syncOn()||!t||!(t.rev>0))return;track(tripRefDoc(t.id).set(tripDocData(t),{merge:true}));}
+/* A name/status change: bump rev and write the whole doc. */
+function tripEdit(t,fields){Object.keys(fields).forEach(function(k){t[k]=fields[k];});t.rev=(t.rev||0)+1;t.ph=false;saveTrips();pushTrip(t);}
+/* A sample changed in this trip: stamp lastChangeAt (max-merged on every device). */
+function stampTrip(id,field){
+  var t=getTrip(id);if(!t)return;field=field||'lastChangeAt';
+  t[field]=Date.now();saveTrips();
+  if(syncOn()&&t.rev>0){var o={};o[field]=t[field];track(tripRefDoc(t.id).set(o,{merge:true}));}
+}
+function markExported(){
+  lsSet('last_export',Date.now().toString());syncMeta(); /* still read by v35-v37 */
+  stampTrip(CUR_TRIP,'lastExportAt');
+}
+function applyRemoteTrips(ops){
+  var changed=false;
+  ops.forEach(function(o){
+    var t=getTrip(o.id);
+    if(o.op==='del'){
+      if(!t)return;
+      /* The trip was deleted on another device. Its samples arrive as deletes
+         too; drop them now so the trip can't come back as a placeholder. */
+      var gone=entries.filter(function(e){return tripOf(e)===o.id;});
+      gone.forEach(function(e){if(e.imageId){delete imageStore[e.imageId];dbDelete(e.imageId);}});
+      if(gone.length){entries=entries.filter(function(e){return tripOf(e)!==o.id;});persistQuiet();}
+      TRIPS=TRIPS.filter(function(x){return x.id!==o.id;});changed=true;
+      if(CUR_TRIP===o.id){VIEW='home';CUR_TRIP=null;SELECT=false;SEL={};toast('That trip was deleted on another device');}
+      return;
+    }
+    var d=o.data||{};
+    if(!t){t={id:o.id,type:'sample',name:d.name||'Untitled trip',status:d.status||'open',createdAt:d.createdAt||Date.now(),completedAt:d.completedAt||0,lastExportAt:d.lastExportAt||0,lastChangeAt:d.lastChangeAt||0,rev:d.rev||0};TRIPS.push(t);changed=true;return;}
+    if((d.rev||0)>(t.rev||0)){t.name=d.name||t.name;t.status=d.status||'open';t.completedAt=d.completedAt||0;t.createdAt=d.createdAt||t.createdAt;t.rev=d.rev;t.ph=false;changed=true;}
+    var le=Math.max(t.lastExportAt||0,d.lastExportAt||0),lc=Math.max(t.lastChangeAt||0,d.lastChangeAt||0);
+    if(le!==t.lastExportAt||lc!==t.lastChangeAt){t.lastExportAt=le;t.lastChangeAt=lc;changed=true;}
+  });
+  if(changed){saveTrips();if(!modalOpen())render();else updateStats();}
+}
+function startTripSync(){
+  if(SYNC.unsubTrips){SYNC.unsubTrips();SYNC.unsubTrips=null;}
+  var first=true;
+  SYNC.unsubTrips=firebase.firestore().collection('users').doc(SYNC.user.uid).collection('trips').onSnapshot(function(snap){
+    var ops=[];
+    snap.docChanges().forEach(function(ch){
+      if(ch.doc.metadata&&ch.doc.metadata.hasPendingWrites)return;
+      if(ch.type==='removed')ops.push({op:'del',id:ch.doc.id});
+      else ops.push({op:'up',id:ch.doc.id,data:ch.doc.data()});
+    });
+    if(first){
+      first=false;
+      /* Push trips this device knows and the cloud doesn't (or holds older). */
+      var cloud={};snap.forEach(function(dd){var x=(dd.data?dd.data():null)||{};cloud[dd.id]=x.rev||0;});
+      TRIPS.forEach(function(t){if(t.rev>0&&(cloud[t.id]==null||cloud[t.id]<t.rev))pushTrip(t);});
+    }
+    if(ops.length)applyRemoteTrips(ops);
+  },function(err){
+    toast('Trip sync error: '+(err&&err.message?err.message:'unknown')+'. If it says permissions, the Firestore rules need users/{uid}/trips. Samples still sync.');
+  });
+}
+
+/* ---------- views ---------- */
+function applyView(){
+  var home=VIEW==='home';
+  document.getElementById('homeView').style.display=home?'':'none';
+  document.getElementById('tripView').style.display=home?'none':'';
+  document.getElementById('backBtn').style.display=home?'none':'';
+  document.getElementById('tripMenuBtn').style.display=home?'none':'flex';
+  var t=home?null:getTrip(CUR_TRIP);
+  document.getElementById('appTitle').textContent=home?'My work':(t?t.name:'');
+  document.getElementById('appSub').textContent=home?'RD Style Sample Log':'Sample Log'+(t&&t.status==='completed'?' · completed, read-only':'');
+}
+function openTrip(id){
+  if(!getTrip(id))return;
+  VIEW='trip';CUR_TRIP=id;SELECT=false;SEL={};lsSet('last_trip',id);
+  render();try{window.scrollTo(0,0);}catch(e){}
+}
+function goHome(){
+  var t=getTrip(CUR_TRIP);
+  VIEW='home';HOME_TAB=t&&t.status==='completed'?'done':'open';SELECT=false;SEL={};
+  CUR_TRIP=null;lsDel('last_trip');
+  render();try{window.scrollTo(0,0);}catch(e){}
+}
+function tripSummary(id){
+  var l=tripEntries(id),cur={},inc=0,qty=0;
+  l.forEach(function(e){var c=e.currency||'?';cur[c]=(cur[c]||0)+(parseFloat(e.qty)||0)*(parseFloat(e.cost)||0);qty+=parseInt(e.qty)||0;if(missingFields(e).length)inc++;});
+  return{count:l.length,qty:qty,value:Object.keys(cur).map(function(c){return fmtMoney(cur[c],c);}).join(' · ')||'—',inc:inc};
+}
+function agoText(ts){var m=Math.round((Date.now()-ts)/60000);if(m<1)return'just now';if(m<60)return m+'m ago';var h=Math.round(m/60);if(h<48)return h+'h ago';return Math.round(h/24)+'d ago';}
+function fmtDay(ts){try{return new Date(ts).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'});}catch(e){return'';}}
+/* One line per card, in the spec's priority order. */
+function tripAttention(t){
+  var s=tripSummary(t.id);
+  if(s.inc)return['warn',s.inc+' incomplete'];
+  if(!s.count)return['info','No samples yet'];
+  if(!t.lastExportAt)return['warn','Not exported'];
+  if((t.lastChangeAt||0)>t.lastExportAt)return['warn','Changes since export'];
+  return['ok','Exported '+agoText(t.lastExportAt)];
+}
+function visibleTrips(){return TRIPS.filter(function(t){return!(t.ph&&!tripEntries(t.id).length);});}
+function renderHomeSync(){
+  var el=document.getElementById('hwSync');if(!el)return;
+  if(!SYNC.user){el.innerHTML='';return;}
+  var pq=(typeof photoQCount==='function')?photoQCount():0,n=SYNC.pend+pq;
+  el.innerHTML=navigator.onLine===false?' · ☁ offline, changes queued':(n?' · ☁ '+n+' waiting to sync':' · ☁ synced');
+}
+function renderHome(){
+  var all=visibleTrips();
+  var open=all.filter(function(t){return t.status!=='completed';}),done=all.filter(function(t){return t.status==='completed';});
+  var list=(HOME_TAB==='done'?done:open).slice().sort(function(a,b){return(b.lastChangeAt||b.createdAt||0)-(a.lastChangeAt||a.createdAt||0);});
+  var who=SYNC.user?'Signed in as <b>'+esc(SYNC.user.email||'')+'</b><span id="hwSync"></span>':'Not signed in — trips and samples are kept on this device only.';
+  var h='<div class="hw-who">'+who+'</div>';
+  h+='<div class="hw-tabs"><button class="hw-tab'+(HOME_TAB!=='done'?' on':'')+'" onclick="HOME_TAB=\'open\';render()">Open<span class="n">'+open.length+'</span></button><button class="hw-tab'+(HOME_TAB==='done'?' on':'')+'" onclick="HOME_TAB=\'done\';render()">Completed<span class="n">'+done.length+'</span></button></div><div class="hw-list">';
+  if(!list.length)h+='<div class="empty-state"><div class="icon">🧳</div><p>'+(HOME_TAB==='done'?'Nothing completed yet.<br>Mark a trip complete from its ⋯ menu.':'No open trips.<br>Tap <strong>+ New trip</strong> to start one.')+'</p></div>';
+  list.forEach(function(t){
+    var s=tripSummary(t.id),at=tripAttention(t);
+    h+='<div class="trip-card" onclick="openTrip(\''+esc(t.id)+'\')"><div class="tc-type">Sample Log'+(t.status==='completed'&&t.completedAt?' · completed '+esc(fmtDay(t.completedAt)):'')+'</div>'+
+      '<div class="tc-name">'+esc(t.name)+'</div><div class="tc-counts"><b>'+s.count+'</b> sample'+(s.count===1?'':'s')+' · <b>'+s.qty+'</b> pcs · '+esc(s.value)+'</div>'+
+      '<span class="tc-attn '+at[0]+'">'+esc(at[1])+'</span></div>';
+  });
+  h+='</div><div class="fab-group"><button class="fab fab-add" onclick="newTrip()">+ New trip</button></div>';
+  document.getElementById('homeView').innerHTML=h;
+  renderHomeSync();
+}
+function renderTripChrome(t,n){
+  var done=t.status==='completed';
+  var b='';
+  if(SELECT)b='<div class="trip-banner info">Tap samples to select them, then choose the trip to move them to. Photos move with them.</div>';
+  else if(done)b='<div class="trip-banner done">Completed '+esc(fmtDay(t.completedAt||Date.now()))+' · read-only. Export again any time, or Reopen it to add or edit samples.</div>';
+  else if(t.id===DEFAULT_TRIP&&t.name===DEFAULT_TRIP_NAME&&n&&TRIPS.length===1)b='<div class="trip-banner info"><b>Your samples are all here.</b> Everything logged before trips arrived is in this one trip. Tap ⋯ to rename it, or to move some samples into a new trip.</div>';
+  document.getElementById('tripBanner').innerHTML=b;
+  document.getElementById('importSection').style.display=(done||SELECT)?'none':'';
+  document.getElementById('btnAdd').style.display=done?'none':'';
+  document.getElementById('btnReopen').style.display=done?'':'none';
+  document.getElementById('btnSave').innerHTML=done?'&darr; Export again':'&darr; Save';
+  document.getElementById('tripFabs').style.display=SELECT?'none':'';
+  var sb=document.getElementById('selBar');sb.style.display=SELECT?'flex':'none';
+  if(SELECT){var k=Object.keys(SEL).length,g=document.getElementById('selGo');g.textContent='Move '+k+' to…';g.disabled=!k;}
+}
+
+/* ---------- trip sheet ---------- */
+function tripSheet(title,body){document.getElementById('tripSheetTitle').textContent=title;document.getElementById('tripSheetBody').innerHTML=body;document.getElementById('tripSheetOverlay').classList.add('open');}
+function closeTripSheet(){var o=document.getElementById('tripSheetOverlay');if(o)o.classList.remove('open');}
+function monthLabel(){try{return new Date().toLocaleDateString('en-US',{month:'short',year:'numeric'});}catch(e){return'';}}
+function newTrip(forMove){
+  tripSheet('New trip','<p>A Sample Log trip. Several trips can be open at once — starting this one doesn’t close the others.</p>'+
+    '<input id="tripNameIn" maxlength="60" placeholder="City · Month" value=" · '+esc(monthLabel())+'" onkeydown="if(event.key===\'Enter\')createTrip('+(forMove?'true':'false')+')">'+
+    '<button class="ts-btn pri" onclick="createTrip('+(forMove?'true':'false')+')">Create trip</button><button class="ts-btn ghost" onclick="closeTripSheet()">Cancel</button>');
+  var i=document.getElementById('tripNameIn');setTimeout(function(){try{i.focus();i.setSelectionRange(0,0);}catch(e){}},60);
+}
+function cleanTripName(v){v=String(v||'').replace(/\s+/g,' ').trim();if(!v||/^·/.test(v))return'';return v.slice(0,60);}
+function createTrip(forMove){
+  var n=cleanTripName(document.getElementById('tripNameIn').value);
+  if(!n){toast('Give the trip a name — city first, e.g. Paris · Oct 2026');return;}
+  var t={id:newTripId(),type:'sample',name:n,status:'open',createdAt:Date.now(),completedAt:0,lastExportAt:0,lastChangeAt:0,rev:1};
+  TRIPS.push(t);saveTrips();pushTrip(t);closeTripSheet();
+  if(forMove){doMove(t.id);return;}
+  openTrip(t.id);toast('Trip created — tap + Add sample to start');
+}
+function renameTrip(){
+  var t=getTrip(CUR_TRIP);if(!t)return;
+  tripSheet('Rename trip','<input id="tripRenameIn" maxlength="60" value="'+esc(t.name)+'" onkeydown="if(event.key===\'Enter\')doRename()"><button class="ts-btn pri" onclick="doRename()">Save</button><button class="ts-btn ghost" onclick="closeTripSheet()">Cancel</button>');
+  setTimeout(function(){var i=document.getElementById('tripRenameIn');try{i.focus();i.select();}catch(e){}},60);
+}
+function doRename(){
+  var n=cleanTripName(document.getElementById('tripRenameIn').value);if(!n){toast('Trip name can’t be empty');return;}
+  tripEdit(getTrip(CUR_TRIP),{name:n});closeTripSheet();render();toast('Renamed');
+}
+function tripMenu(){
+  var t=getTrip(CUR_TRIP);if(!t)return;
+  var done=t.status==='completed',n=tripEntries().length,h='';
+  if(!done){
+    h+='<button class="ts-item" onclick="closeTripSheet();renameTrip()">Rename trip</button>';
+    h+='<button class="ts-item" onclick="closeTripSheet();startSelect()">Move samples…<small>Send some of this trip’s samples to another open trip, or a new one</small></button>';
+    h+='<button class="ts-item" onclick="markComplete()">Mark complete<small>Moves it to Completed, read-only. Nothing is deleted.</small></button>';
+  }else{
+    h+='<button class="ts-item" onclick="closeTripSheet();reopenTrip()">Reopen<small>Back to Open so you can add and edit samples</small></button>';
+  }
+  h+='<button class="ts-item red" onclick="deleteTrip1()">Delete trip…<small>Removes this trip’s '+n+' sample'+(n===1?'':'s')+' and photos everywhere</small></button>';
+  h+='<button class="ts-btn ghost" onclick="closeTripSheet()">Close</button>';
+  tripSheet(t.name,h);
+}
+/* ---------- move samples ---------- */
+function startSelect(){if(!tripEntries().length){toast('No samples to move');return;}SELECT=true;SEL={};render();}
+function endSelect(){SELECT=false;SEL={};render();}
+function toggleSel(uid){if(SEL[uid])delete SEL[uid];else SEL[uid]=1;render();}
+function moveTarget(){
+  var k=Object.keys(SEL).length;if(!k)return;
+  var others=TRIPS.filter(function(t){return t.status!=='completed'&&t.id!==CUR_TRIP&&!(t.ph&&!tripEntries(t.id).length);});
+  var h='<p>Photos go with them. Only open trips are listed.</p>';
+  others.forEach(function(t){h+='<div class="ts-pick" onclick="doMove(\''+esc(t.id)+'\')"><span>'+esc(t.name)+'</span><small>'+tripEntries(t.id).length+' samples</small></div>';});
+  h+='<div class="ts-pick" onclick="closeTripSheet();newTrip(true)"><span><b>+ New trip…</b></span></div><button class="ts-btn ghost" onclick="closeTripSheet()">Cancel</button>';
+  tripSheet('Move '+k+' sample'+(k===1?'':'s')+' to…',h);
+}
+function doMove(dest){
+  var from=CUR_TRIP,to=getTrip(dest),moved=[];
+  entries.forEach(function(e){if(SEL[e.uid]&&tripOf(e)===from){e.trip=dest;e.rev=(e.rev||0)+1;moved.push(e);}});
+  SELECT=false;SEL={};closeTripSheet();
+  persistQuiet();syncPushMany(moved);
+  stampTrip(from);stampTrip(dest);
+  render();
+  toast('Moved '+moved.length+' sample'+(moved.length===1?'':'s')+' to '+(to?to.name:'the new trip'));
+}
+/* ---------- complete / reopen ---------- */
+function markComplete(){
+  var t=getTrip(CUR_TRIP);if(!t)return;
+  var s=tripSummary(t.id),issues=[];
+  if(s.inc)issues.push('<b>'+s.inc+'</b> incomplete sample'+(s.inc===1?'':'s'));
+  if(s.count&&!t.lastExportAt)issues.push('it has never been exported');
+  else if(s.count&&(t.lastChangeAt||0)>(t.lastExportAt||0))issues.push('it has changes since the last export');
+  var pq=(typeof photoQCount==='function')?photoQCount():0;
+  if(SYNC.user&&(SYNC.pend+pq))issues.push('<b>'+(SYNC.pend+pq)+'</b> change'+((SYNC.pend+pq)===1?'':'s')+' waiting to sync');
+  var h=issues.length?'<div class="ts-warn">Before you complete it: '+issues.join(', ')+'.</div>':'';
+  h+='<p>It moves to Completed and opens read-only. Nothing is deleted — you can Export again or Reopen it any time, on any device.</p>';
+  h+='<button class="ts-btn pri" onclick="doComplete()">'+(issues.length?'Complete anyway':'Mark complete')+'</button><button class="ts-btn ghost" onclick="closeTripSheet()">Cancel</button>';
+  tripSheet('Mark “'+t.name+'” complete?',h);
+}
+function doComplete(){var t=getTrip(CUR_TRIP);tripEdit(t,{status:'completed',completedAt:Date.now()});closeTripSheet();render();toast('Completed — it’s under Completed in My work');}
+function reopenTrip(){var t=getTrip(CUR_TRIP);if(!t)return;tripEdit(t,{status:'open',completedAt:0});render();toast('Reopened');}
+/* ---------- delete trip (the only destructive path) ---------- */
+function deleteTrip1(){
+  var t=getTrip(CUR_TRIP);if(!t)return;
+  var l=tripEntries(),ph=0;l.forEach(function(e){ph+=photoSlotsOf(e).length||(e.imageId&&imageStore[e.imageId]?PHOTO_SLOTS.filter(function(s){return imageStore[e.imageId][s+'Thumb'];}).length:0);});
+  var h='<div class="ts-danger">This deletes <b>'+l.length+' sample'+(l.length===1?'':'s')+'</b>'+(ph?' and <b>'+ph+' photo'+(ph===1?'':'s')+'</b>':'')+' from this device'+(syncOn()?', your other signed-in devices and the cloud':'')+'.</div>';
+  h+=l.length?(t.lastExportAt?'<p>Last exported '+esc(agoText(t.lastExportAt))+(((t.lastChangeAt||0)>t.lastExportAt)?', with changes since':'')+'.</p>':'<p><b>This trip has never been exported.</b> Tap Cancel, then Save, if you want a copy first.</p>'):'';
+  h+='<button class="ts-btn redlite" onclick="deleteTrip2()">Continue</button><button class="ts-btn ghost" onclick="closeTripSheet()">Cancel</button>';
+  tripSheet('Delete “'+t.name+'”?',h);
+}
+function deleteTrip2(){
+  var t=getTrip(CUR_TRIP);if(!t)return;
+  tripSheet('Are you sure?','<p>Type the trip name to confirm. This can’t be undone.</p><input id="tripDelIn" autocomplete="off" placeholder="'+esc(t.name)+'" oninput="document.getElementById(\'tripDelGo\').disabled=(cleanTripName(this.value)!==getTrip(CUR_TRIP).name)"><button class="ts-btn red" id="tripDelGo" disabled onclick="doDeleteTrip()">Delete trip</button><button class="ts-btn ghost" onclick="closeTripSheet()">Cancel</button>');
+  setTimeout(function(){var i=document.getElementById('tripDelIn');try{i.focus();}catch(e){}},60);
+}
+function doDeleteTrip(){
+  var id=CUR_TRIP,t=getTrip(id);if(!t)return;
+  var gone=tripEntries(id),uids=gone.filter(function(e){return e.uid;}).map(function(e){return e.uid;});
+  gone.forEach(function(e){if(e.imageId){delete imageStore[e.imageId];dbDelete(e.imageId);}});
+  entries=entries.filter(function(e){return tripOf(e)!==id;});
+  persistQuiet();
+  syncDeleteMany(uids);uids.forEach(function(u){deleteStoragePhotos(u);});
+  TRIPS=TRIPS.filter(function(x){return x.id!==id;});saveTrips();
+  if(syncOn())track(tripRefDoc(id).delete());
+  closeTripSheet();VIEW='home';CUR_TRIP=null;lsDel('last_trip');render();
+  toast('Deleted '+t.name);
+}
+
 /* ===== v29: CROSS-DEVICE SYNC — Firebase Auth (email/password) + Firestore =====
    Per-sample metadata sync keyed on the v28 uid; v30 adds photo sync —
    thumbnails inside the sample doc, ~1600px fulls in Firebase Storage (see
@@ -1367,7 +1750,7 @@ var FIREBASE_CONFIG={apiKey:"AIzaSyDCsY46_4M_ttOQxiuLNIw7kt75Q4pmCl8",authDomain
 /* SDK version is pinned in the four <script> tags in <head> (SYNC_SDK below
    is documentation) — bump all five together, same rule as SCAN_MODEL. */
 var SYNC_SDK='10.14.1';
-var SYNC={ok:false,user:null,unsub:null,unsubMeta:null,pend:0,deviceId:'',lastMetaWrite:'',cloudCount:null,lastSyncAt:0};
+var SYNC={ok:false,user:null,unsub:null,unsubMeta:null,unsubTrips:null,pend:0,deviceId:'',lastMetaWrite:'',cloudCount:null,lastSyncAt:0};
 var _pendingRemote=[];
 function fbAvailable(){return typeof firebase!=='undefined'&&!!firebase.firestore&&!!firebase.auth;}
 function syncOn(){return SYNC.ok&&!!SYNC.user;}
@@ -1377,7 +1760,7 @@ function metaRef(){return firebase.firestore().collection('users').doc(SYNC.user
    flight. With Firestore persistence on, queued writes survive a reload —
    the pill is information, not a warning to keep the tab open. */
 function track(p){SYNC.pend++;updateStats();p.catch(function(e){}).then(function(){SYNC.pend=Math.max(0,SYNC.pend-1);updateStats();});}
-function syncEntryData(e){var d={style:e.style||'',country:e.country||'',qty:e.qty||1,garment:e.garment||'',content:e.content||'',gender:e.gender||'',woven:e.woven||'',cost:e.cost||'',currency:e.currency||'',notes:e.notes||'',scanned:!!e.scanned,at:e.at||Date.now(),rev:e.rev||1,revBy:SYNC.deviceId,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
+function syncEntryData(e){var d={style:e.style||'',country:e.country||'',qty:e.qty||1,garment:e.garment||'',content:e.content||'',gender:e.gender||'',woven:e.woven||'',cost:e.cost||'',currency:e.currency||'',notes:e.notes||'',scanned:!!e.scanned,tripId:tripOf(e),at:e.at||Date.now(),rev:e.rev||1,revBy:SYNC.deviceId,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
   /* v30: thumbnails ride the doc so previews reach every device through the
      offline-safe Firestore channel; photoRev fences them like rev fences data */
   var rec=e.imageId&&imageStore[e.imageId],th={},has=false;
@@ -1532,6 +1915,7 @@ function fetchFullPhoto(sampleUid,slot){
    desktop can produce the customs bundle. Anything unreachable falls back to
    its thumb rather than going missing from the ZIP. */
 async function prefetchMissingFulls(){
+  var entries=tripEntries();
   if(!syncOn()||navigator.onLine===false)return;
   var jobs=[];
   entries.forEach(function(e){
@@ -1547,7 +1931,7 @@ async function prefetchMissingFulls(){
 /* Whitelist remote fields into the local entry shape. Server-only fields
    (updatedAt, revBy) never land in entries, so localStorage, the worksheet
    and import compatibility are untouched by sync. */
-function cleanRemote(uid,d){d=d||{};return{uid:uid,style:d.style||'',country:d.country||'',qty:d.qty||1,garment:d.garment||'',content:d.content||'',gender:d.gender||'',woven:d.woven||'',cost:d.cost||'',currency:d.currency||'',notes:d.notes||'',scanned:!!d.scanned,rev:d.rev||1,at:d.at||Date.now(),photoRev:d.photoRev||0};}
+function cleanRemote(uid,d){d=d||{};return{uid:uid,style:d.style||'',country:d.country||'',qty:d.qty||1,garment:d.garment||'',content:d.content||'',gender:d.gender||'',woven:d.woven||'',cost:d.cost||'',currency:d.currency||'',notes:d.notes||'',scanned:!!d.scanned,trip:d.tripId||'t_default',rev:d.rev||1,at:d.at||Date.now(),photoRev:d.photoRev||0};}
 function modalOpen(){return['choiceOverlay','scanOverlay','manualOverlay'].some(function(id){var el=document.getElementById(id);return el&&el.classList.contains('open');});}
 function applyRemoteOps(ops){
   if(modalOpen()){_pendingRemote=_pendingRemote.concat(ops);return;}
@@ -1626,6 +2010,7 @@ function startSync(){
     }
     if(ops.length)applyRemoteOps(ops);
   },function(err){toast('Sync listener error: '+(err&&err.message?err.message:'unknown')+' — logging on this device is unaffected.');});
+  startTripSync();
   SYNC.unsubMeta=metaRef().onSnapshot(function(d){
     if(d.metadata&&d.metadata.hasPendingWrites)return;
     var m=(d&&d.data&&d.data())||{};
@@ -1646,7 +2031,7 @@ function startSync(){
 function adoptLegacy(u){
   var target=bucketFor(u?u.uid:'');
   try{
-    var keys=['samples','last_export','last_change','photo_queue','reup32'];
+    var keys=['samples','last_export','last_change','photo_queue','reup32','trips','last_trip'];
     keys.forEach(function(n){
       var v=null;try{v=localStorage.getItem(LEGACY_KEYS[n]);}catch(e){}
       if(v!=null){try{localStorage.setItem(target+'__'+n,v);}catch(e){}}
@@ -1675,6 +2060,7 @@ function switchBucket(u){
   BUCKET=target;ACTIVE_UID=uid;
   try{localStorage.setItem('hc_active_uid',uid);}catch(e){}
   try{entries=JSON.parse(lsGet('samples')||'[]');}catch(e){entries=[];}
+  loadTrips();VIEW='home';CUR_TRIP=null;SELECT=false;SEL={};closeTripSheet();
   if(typeof closeLightbox==='function'){try{closeLightbox();}catch(e){}}
   render();updateStats();
 }
@@ -1709,7 +2095,7 @@ function maybeAdoptLocalBucket(){
   }catch(e){}
   toast('Uploaded '+moved.length+' sample'+(moved.length===1?'':'s')+' to this account');
 }
-function stopSyncListeners(){if(SYNC.unsub){SYNC.unsub();SYNC.unsub=null;}if(SYNC.unsubMeta){SYNC.unsubMeta();SYNC.unsubMeta=null;}SYNC.pend=0;_pendingRemote=[];}
+function stopSyncListeners(){if(SYNC.unsubTrips){SYNC.unsubTrips();SYNC.unsubTrips=null;}if(SYNC.unsub){SYNC.unsub();SYNC.unsub=null;}if(SYNC.unsubMeta){SYNC.unsubMeta();SYNC.unsubMeta=null;}SYNC.pend=0;_pendingRemote=[];}
 function initSync(){
   if(!fbAvailable()){updateSyncUI();return;}
   try{
@@ -1835,6 +2221,9 @@ window.addEventListener('offline',function(){updateStats();});
   var added=false,_b=Date.now();
   entries.forEach(function(e,i){if(!e.uid){e.uid=newUid();added=true;}if(!e.at){e.at=_b+i;added=true;}if(e.imageId&&imageStore[e.imageId]&&!e.photoRev){e.photoRev=1;added=true;}});
   if(added)persistQuiet();
+  loadTrips();
+  var _lt=lsGet('last_trip');
+  if(_lt&&getTrip(_lt)){VIEW='trip';CUR_TRIP=_lt;}
   /* v32 one-time: garment photos synced under the v30/v31 policy may sit in
      Storage at the wrong resolution. Re-queue every slot this device holds an
      original for; the pump applies the per-slot policy. Drains once signed in. */
@@ -1862,7 +2251,7 @@ window.addEventListener('offline',function(){updateStats();});
       <span style="font-size:15px;font-weight:600">Documentation</span>
       <button onclick="document.getElementById('docsPopup').classList.remove('open')" style="background:var(--bg);border:none;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted)">&times;</button>
     </div>
-    <iframe src="docs.html?v=35" style="flex:1;border:none;width:100%"></iframe>
+    <iframe src="docs.html?v=38" style="flex:1;border:none;width:100%"></iframe>
   </div>
 </div>
 </body>
